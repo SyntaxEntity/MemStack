@@ -1,0 +1,21 @@
+# Rust 构建产物
+/target
+
+# 本地数据库与数据文件
+*.sqlite
+*.sqlite3
+*.db
+/data
+
+# 环境与密钥
+.env
+.env.*
+
+# 系统杂项
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
