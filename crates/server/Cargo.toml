@@ -1,0 +1,19 @@
+[package]
+name = "memstack-server"
+description = "同步服务（AGPLv3）"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+# 同步服务单独 AGPLv3，防止闭源 SaaS 套壳
+license = "AGPL-3.0-only"
+
+[[bin]]
+name = "memstack-server"
+path = "src/main.rs"
+
+[dependencies]
+
+[lints]
+workspace = true

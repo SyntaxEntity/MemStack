@@ -1,0 +1,18 @@
+[package]
+name = "memstack-core"
+description = "领域模型与 FSRS 调度，不碰 IO"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+fsrs.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

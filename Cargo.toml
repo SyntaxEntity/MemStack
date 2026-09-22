@@ -1,0 +1,48 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/core",
+    "crates/storage",
+    "crates/markdown",
+    "crates/import",
+    "crates/cli",
+    "crates/desktop",
+    "crates/server",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+authors = ["MemStack contributors"]
+repository = "https://github.com/memstack/memstack"
+
+# 客户端 crate：MIT OR Apache-2.0
+# server 单独 AGPL-3.0-only，见 crates/server/Cargo.toml
+license = "MIT OR Apache-2.0"
+
+[workspace.dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4", features = ["derive"] }
+crossterm = "0.29"
+fsrs = "6.6.2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sqlx = { version = "0.9", default-features = false, features = ["runtime-tokio", "sqlite"] }
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+ratatui = "0.29"
+zip = { version = "2", default-features = false, features = ["deflate"] }
+rusqlite = { version = "0.34", features = ["bundled"] }
+
+# workspace 内部依赖，版本与 workspace.package 同步
+memstack-core = { path = "crates/core", version = "0.1.0" }
+memstack-storage = { path = "crates/storage", version = "0.1.0" }
+memstack-markdown = { path = "crates/markdown", version = "0.1.0" }
+memstack-import = { path = "crates/import", version = "0.1.0" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }

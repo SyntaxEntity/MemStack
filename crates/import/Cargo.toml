@@ -1,0 +1,22 @@
+[package]
+name = "memstack-import"
+description = "apkg、CSV、Markdown 导入"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+chrono.workspace = true
+memstack-core.workspace = true
+rusqlite.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+
+[lints]
+workspace = true
