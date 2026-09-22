@@ -151,7 +151,7 @@ crates/markdown   渲染
 crates/import     Markdown / apkg 导入
 crates/cli        CLI + TUI
 crates/desktop    Tauri 壳（骨架）
-crates/server     同步服务（骨架，AGPLv3）
+crates/server     同步服务（骨架，AGPLv3，见其 README）
 docs/             方案
 ```
 
@@ -162,4 +162,4 @@ docs/             方案
 - 客户端（core / storage / markdown / import / cli / desktop）：**MIT OR Apache-2.0**，任选
 - 同步服务 `server`：**AGPL-3.0-only**，防止套壳闭源 SaaS
 
-详见 `LICENSE-MIT`、`LICENSE-APACHE`、`LICENSE-AGPL`。
+详见 `LICENSE-MIT`、`LICENSE-APACHE`、`LICENSE-AGPL`。自托管同步服务与 AGPL 义务见 [crates/server/README.md](crates/server/README.md)。
