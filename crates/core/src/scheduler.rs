@@ -4,7 +4,7 @@
 //! 评分 Again 从 Review 跌入 Relearning，并计入 lapses。
 
 use chrono::{DateTime, Duration, Utc};
-use fsrs::{FSRS, ItemState};
+use fsrs::{ItemState, FSRS};
 use serde::{Deserialize, Serialize};
 
 use crate::error::{Error, Result};
@@ -150,12 +150,7 @@ impl Scheduler {
     }
 
     /// 学习 / 再学习 / 新卡的步骤调度。返回 interval_days（步骤内用分钟折算）。
-    fn schedule_steps(
-        &self,
-        card: &mut Card,
-        rating: Rating,
-        now: DateTime<Utc>,
-    ) -> Result<f32> {
+    fn schedule_steps(&self, card: &mut Card, rating: Rating, now: DateTime<Utc>) -> Result<f32> {
         let relearning = card.state == CardState::Relearning;
         let steps = if relearning {
             self.relearning_steps.clone()

@@ -37,10 +37,7 @@ pub use error::{Error, Result};
 pub use parse::{parse_markdown_cards, NoteDraft, ParsedFile};
 
 /// 从文件读入并解析。`default_deck` 覆盖 frontmatter 里的 deck。
-pub fn import_markdown_file(
-    path: &str,
-    default_deck: Option<&str>,
-) -> Result<Vec<NoteDraft>> {
+pub fn import_markdown_file(path: &str, default_deck: Option<&str>) -> Result<Vec<NoteDraft>> {
     let text = std::fs::read_to_string(path).map_err(|source| Error::Io {
         path: path.to_string(),
         source,
@@ -52,10 +49,7 @@ pub fn import_markdown_file(
 /// 从目录批量导入 `*.md`（递归）。
 ///
 /// 未写 deck 时，用文件所在子目录名作默认牌组；根目录下的文件用 `dir` 的名字。
-pub fn import_markdown_dir(
-    dir: &str,
-    default_deck: Option<&str>,
-) -> Result<Vec<NoteDraft>> {
+pub fn import_markdown_dir(dir: &str, default_deck: Option<&str>) -> Result<Vec<NoteDraft>> {
     let mut paths = Vec::new();
     collect_md(Path::new(dir), &mut paths)?;
     paths.sort();

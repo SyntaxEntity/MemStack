@@ -8,7 +8,11 @@ mod term;
 mod tui;
 
 #[derive(Parser, Debug)]
-#[command(name = "memstack", version, about = "忆栈 MemStack — 开源间隔重复记忆卡")]
+#[command(
+    name = "memstack",
+    version,
+    about = "忆栈 MemStack — 开源间隔重复记忆卡"
+)]
 struct Cli {
     /// SQLite 数据库路径
     #[arg(long, global = true, default_value = "memstack.sqlite")]
@@ -119,10 +123,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         Command::Tui => tui::run(&db).await?,
         Command::Stats { deck } => {
             let deck_id = match deck.as_deref() {
-                Some(name) => db
-                    .get_deck_by_name(name)
-                    .await?
-                    .map(|d| d.id),
+                Some(name) => db.get_deck_by_name(name).await?.map(|d| d.id),
                 None => None,
             };
             if deck.is_some() && deck_id.is_none() {

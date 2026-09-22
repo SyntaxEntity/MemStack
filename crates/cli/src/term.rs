@@ -44,9 +44,7 @@ pub fn read_key() -> std::io::Result<Key> {
                 }
                 return Ok(match code {
                     KeyCode::Char(' ') | KeyCode::Enter | KeyCode::Char('j') => Key::Flip,
-                    KeyCode::Char(c @ '1'..='4') => {
-                        Key::Rate(c as u8 - b'0')
-                    }
+                    KeyCode::Char(c @ '1'..='4') => Key::Rate(c as u8 - b'0'),
                     KeyCode::Char('u') | KeyCode::Char('U') => Key::Undo,
                     KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => Key::Quit,
                     _ => Key::Ignore,

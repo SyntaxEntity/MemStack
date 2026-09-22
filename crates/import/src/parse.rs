@@ -164,10 +164,7 @@ fn parse_tags(value: &str) -> BTreeSet<String> {
 }
 
 fn unquote(s: &str) -> &str {
-    s.trim()
-        .trim_matches('"')
-        .trim_matches('\'')
-        .trim()
+    s.trim().trim_matches('"').trim_matches('\'').trim()
 }
 
 fn merge_meta(base: &Meta, over: &Meta) -> Meta {
@@ -181,10 +178,7 @@ fn merge_meta(base: &Meta, over: &Meta) -> Meta {
         },
         kind: over.kind.or(base.kind),
         language: over.language.clone().or_else(|| base.language.clone()),
-        extra: over
-            .extra
-            .clone()
-            .or_else(|| base.extra.clone()),
+        extra: over.extra.clone().or_else(|| base.extra.clone()),
     }
 }
 
@@ -491,9 +485,7 @@ fn lower_bound(arr: &[i32], x: i32) -> usize {
         let text = "---\ndeck: sql\ntype: code\nlanguage: sql\n---\nSELECT {{c1::id}} FROM t;\n";
         let note = one(text);
         match note.content {
-            NoteContent::CodeCloze {
-                code, language, ..
-            } => {
+            NoteContent::CodeCloze { code, language, .. } => {
                 assert_eq!(code, "SELECT {{c1::id}} FROM t;");
                 assert_eq!(language, "sql");
             }

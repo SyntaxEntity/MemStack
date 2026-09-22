@@ -245,7 +245,8 @@ impl App {
             return;
         }
         let i = self.card_state.selected().unwrap_or(0);
-        self.card_state.select(Some((i + 1).min(self.cards.len() - 1)));
+        self.card_state
+            .select(Some((i + 1).min(self.cards.len() - 1)));
     }
 
     fn card_prev(&mut self) {
@@ -340,7 +341,9 @@ impl App {
             "忆栈 MemStack — 牌组    今日新卡 {}/{}  复习 {}/{}",
             self.usage.new_reviewed,
             self.params.new_cards_per_day,
-            self.usage.reviews_done.saturating_sub(self.usage.new_reviewed),
+            self.usage
+                .reviews_done
+                .saturating_sub(self.usage.new_reviewed),
             self.params.reviews_per_day
         );
         f.render_widget(
@@ -416,10 +419,7 @@ impl App {
                     CardType::CodeCloze => "代码",
                 };
                 let flag = if c.suspended { "⏸ " } else { "" };
-                let line = format!(
-                    "{flag}{state} {kind}  {}",
-                    one_line(&c.front)
-                );
+                let line = format!("{flag}{state} {kind}  {}", one_line(&c.front));
                 ListItem::new(line)
             })
             .collect();

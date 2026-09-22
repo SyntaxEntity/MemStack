@@ -235,7 +235,10 @@ fn draw_empty(
             params.reviews_per_day
         ))
     );
-    println!("{}", term::dim("可以先 `memstack add` 造几张，或明天再来。"));
+    println!(
+        "{}",
+        term::dim("可以先 `memstack add` 造几张，或明天再来。")
+    );
 }
 
 fn fmt_in(d: Duration) -> String {

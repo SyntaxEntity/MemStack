@@ -224,9 +224,7 @@ fn summary(content: &NoteContent) -> String {
             format!("问答 {}", first_line(front))
         }
         NoteContent::Cloze { text, .. } => format!("填空 {}", first_line(text)),
-        NoteContent::CodeCloze {
-            code, language, ..
-        } => {
+        NoteContent::CodeCloze { code, language, .. } => {
             let lang = if language.is_empty() {
                 "?"
             } else {

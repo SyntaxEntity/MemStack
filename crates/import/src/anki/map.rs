@@ -28,8 +28,7 @@ pub fn build_import(raw: &RawCollection) -> Result<AnkiImport> {
             reason: format!("找不到模型 {}", rn.mid),
         })?;
 
-        let cards_for_note: Vec<&RawCard> =
-            raw.cards.iter().filter(|c| c.nid == rn.id).collect();
+        let cards_for_note: Vec<&RawCard> = raw.cards.iter().filter(|c| c.nid == rn.id).collect();
         let deck_name = cards_for_note
             .first()
             .and_then(|c| deck_names.get(&c.did))
@@ -134,7 +133,11 @@ fn parse_models(models: &Value) -> HashMap<i64, ModelInfo> {
             .or_else(|| _k.parse::<i64>().ok());
         let Some(id) = id else { continue };
 
-        let name = v.get("name").and_then(Value::as_str).unwrap_or("Basic").to_string();
+        let name = v
+            .get("name")
+            .and_then(Value::as_str)
+            .unwrap_or("Basic")
+            .to_string();
         let is_cloze = v.get("type").and_then(Value::as_i64) == Some(1);
 
         let field_names = v
@@ -158,13 +161,23 @@ fn parse_models(models: &Value) -> HashMap<i64, ModelInfo> {
             .map(|arr| {
                 arr.iter()
                     .map(|t| {
-                        let q = t.get("qfmt").and_then(Value::as_str).unwrap_or("").to_string();
-                        let a = t.get("afmt").and_then(Value::as_str).unwrap_or("").to_string();
+                        let q = t
+                            .get("qfmt")
+                            .and_then(Value::as_str)
+                            .unwrap_or("")
+                            .to_string();
+                        let a = t
+                            .get("afmt")
+                            .and_then(Value::as_str)
+                            .unwrap_or("")
+                            .to_string();
                         (q, a)
                     })
                     .collect()
             })
-            .unwrap_or_else(|| vec![("{{Front}}".into(), "{{Front}}<hr id=answer>{{Back}}".into())]);
+            .unwrap_or_else(|| {
+                vec![("{{Front}}".into(), "{{Front}}<hr id=answer>{{Back}}".into())]
+            });
 
         map.insert(
             id,
@@ -204,9 +217,7 @@ fn render_note(
     }
 }
 
-fn render_cloze_note(
-    named: &[(String, String)],
-) -> Result<(NoteContent, Vec<(String, String)>)> {
+fn render_cloze_note(named: &[(String, String)]) -> Result<(NoteContent, Vec<(String, String)>)> {
     // 找出带挖空的字段，拼成一段 text（通常就一个 Text 字段）
     let mut cloze_src = String::new();
     let mut extra_parts: Vec<String> = Vec::new();
@@ -227,10 +238,7 @@ fn render_cloze_note(
 
     if cloze_src.trim().is_empty() {
         // 兜底：把第一个字段当挖空正文
-        cloze_src = named
-            .first()
-            .map(|(_, v)| v.clone())
-            .unwrap_or_default();
+        cloze_src = named.first().map(|(_, v)| v.clone()).unwrap_or_default();
     }
 
     let ids = cloze_ids(&cloze_src)?;
@@ -383,7 +391,8 @@ fn remove_unknown_tags(s: &str, note_id: i64) -> Result<String> {
         match after.find("}}") {
             Some(end) => {
                 let body = &after[..end];
-                let is_cloze = body.starts_with('c') && body[1..].starts_with(|c: char| c.is_ascii_digit());
+                let is_cloze =
+                    body.starts_with('c') && body[1..].starts_with(|c: char| c.is_ascii_digit());
                 let is_front_side = body == "FrontSide";
                 if is_cloze {
                     out.push_str("{{");
@@ -565,9 +574,7 @@ fn ms_to_utc(ms: i64) -> DateTime<Utc> {
 }
 
 fn secs_to_utc(secs: i64) -> DateTime<Utc> {
-    Utc.timestamp_opt(secs, 0)
-        .single()
-        .unwrap_or_else(Utc::now)
+    Utc.timestamp_opt(secs, 0).single().unwrap_or_else(Utc::now)
 }
 
 fn revlog_time(id: i64) -> DateTime<Utc> {

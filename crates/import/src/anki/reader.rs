@@ -63,8 +63,7 @@ pub fn read_collection(apkg_path: &str) -> Result<RawCollection> {
         path: apkg_path.to_string(),
         source,
     })?;
-    let mut zip = zip::ZipArchive::new(file)
-        .map_err(|e| Error::BadApkg(e.to_string()))?;
+    let mut zip = zip::ZipArchive::new(file).map_err(|e| Error::BadApkg(e.to_string()))?;
 
     let mut db_bytes = None;
     for name in ["collection.anki21", "collection.anki2"] {
@@ -98,15 +97,14 @@ pub fn read_collection(apkg_path: &str) -> Result<RawCollection> {
 fn load_from_sqlite(path: &std::path::Path) -> Result<RawCollection> {
     let conn = Connection::open_with_flags(path, OpenFlags::SQLITE_OPEN_READ_ONLY)?;
 
-    let (crt, models_json, decks_json): (i64, String, String) = conn
-        .query_row("SELECT crt, models, decks FROM col LIMIT 1", [], |row| {
+    let (crt, models_json, decks_json): (i64, String, String) =
+        conn.query_row("SELECT crt, models, decks FROM col LIMIT 1", [], |row| {
             Ok((row.get(0)?, row.get(1)?, row.get(2)?))
         })?;
 
     let mut notes = Vec::new();
     {
-        let mut stmt =
-            conn.prepare("SELECT id, mid, mod, flds, tags FROM notes ORDER BY id")?;
+        let mut stmt = conn.prepare("SELECT id, mid, mod, flds, tags FROM notes ORDER BY id")?;
         let rows = stmt.query_map([], |row| {
             Ok(RawNote {
                 id: row.get(0)?,

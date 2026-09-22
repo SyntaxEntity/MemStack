@@ -138,7 +138,8 @@ impl Storage {
             return Ok(deck);
         }
         let deck = self.create_deck(name, None, now).await?;
-        self.put_deck_params(deck.id, &DeckParams::default()).await?;
+        self.put_deck_params(deck.id, &DeckParams::default())
+            .await?;
         Ok(deck)
     }
 
@@ -163,10 +164,11 @@ impl Storage {
     }
 
     pub async fn list_decks(&self) -> Result<Vec<Deck>> {
-        let rows =
-            sqlx::query("SELECT id, name, parent_id, created_at, updated_at FROM decks ORDER BY name")
-                .fetch_all(&self.pool)
-                .await?;
+        let rows = sqlx::query(
+            "SELECT id, name, parent_id, created_at, updated_at FROM decks ORDER BY name",
+        )
+        .fetch_all(&self.pool)
+        .await?;
         rows.into_iter().map(row_to_deck).collect()
     }
 
@@ -392,7 +394,12 @@ impl Storage {
             .fetch_all(&self.pool)
             .await?
         };
-        out.extend(learning.into_iter().map(row_to_card).collect::<Result<Vec<_>>>()?);
+        out.extend(
+            learning
+                .into_iter()
+                .map(row_to_card)
+                .collect::<Result<Vec<_>>>()?,
+        );
         if out.len() >= limit as usize {
             return Ok(out);
         }
@@ -422,7 +429,11 @@ impl Storage {
                 .fetch_all(&self.pool)
                 .await?
             };
-            out.extend(rows.into_iter().map(row_to_card).collect::<Result<Vec<_>>>()?);
+            out.extend(
+                rows.into_iter()
+                    .map(row_to_card)
+                    .collect::<Result<Vec<_>>>()?,
+            );
         }
 
         // 复习
@@ -454,7 +465,11 @@ impl Storage {
                 .fetch_all(&self.pool)
                 .await?
             };
-            out.extend(rows.into_iter().map(row_to_card).collect::<Result<Vec<_>>>()?);
+            out.extend(
+                rows.into_iter()
+                    .map(row_to_card)
+                    .collect::<Result<Vec<_>>>()?,
+            );
         }
 
         Ok(out)

@@ -103,15 +103,16 @@ impl ReviewSession {
         };
 
         let card = self.queue[0].clone();
-        let outcome = self
-            .scheduler
-            .review(&card, rating, Utc::now(), 0)?;
+        let outcome = self.scheduler.review(&card, rating, Utc::now(), 0)?;
         let saved = db.save_review(&outcome.card, &outcome.log).await?;
         self.undo_stack.push((outcome.previous, saved));
         self.queue.remove(0);
         self.flipped = false;
         self.reviewed += 1;
-        self.flash = Some(format!("✓ {rating} → {}", fmt_interval(outcome.log.interval_days)));
+        self.flash = Some(format!(
+            "✓ {rating} → {}",
+            fmt_interval(outcome.log.interval_days)
+        ));
 
         if self.queue.is_empty() {
             self.refill(db).await?;
