@@ -128,6 +128,8 @@ function renderMarkdown(src) {
 async function openEditor(noteId) {
   state.editingNoteId = noteId || null;
   $("editor-error").textContent = "";
+  await ensureTemplates();
+  $("f-template").value = "";
   const deckName =
     state.decks.find((d) => d.id === state.selectedDeckId)?.name ||
     state.decks[0]?.name ||
@@ -390,12 +392,45 @@ function heatLevel(n) {
   return 4;
 }
 
+// ---------- 模板 ----------
+
+async function ensureTemplates() {
+  if (state.templates) return;
+  state.templates = await invoke("list_templates");
+  const sel = $("f-template");
+  sel.innerHTML = `<option value="">— 空白 —</option>`;
+  for (const t of state.templates) {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = `${t.name}（${kindLabel(t.kind)}）`;
+    opt.title = t.summary;
+    sel.appendChild(opt);
+  }
+}
+
+function applyTemplate(id) {
+  const t = (state.templates || []).find((x) => x.id === id);
+  if (!t) return;
+  setKind(t.kind);
+  $("f-front").value = t.front;
+  $("f-back").value = t.back;
+  $("f-text").value = t.text;
+  $("f-code").value = t.code;
+  $("f-language").value = t.language;
+  $("f-extra-cloze").value = t.extra;
+  $("f-extra-code").value = t.extra;
+  if (!$("f-tags").value.trim()) {
+    $("f-tags").value = t.tags.join(", ");
+  }
+}
+
 // ---------- 事件 ----------
 
 function bind() {
   $("btn-new-note").onclick = () => openEditor(null);
   $("editor-close").onclick = closeEditor;
   $("editor-save").onclick = saveNote;
+  $("f-template").onchange = () => applyTemplate($("f-template").value);
   for (const tab of document.querySelectorAll(".kind-tabs .tab")) {
     tab.onclick = () => setKind(tab.dataset.kind);
   }

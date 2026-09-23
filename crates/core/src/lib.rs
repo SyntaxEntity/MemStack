@@ -6,6 +6,7 @@ mod cloze;
 mod error;
 mod model;
 mod scheduler;
+mod template;
 
 pub use cloze::{cloze_faces, cloze_ids, generate_cards, parse_segments, CardDraft, Segment};
 pub use error::{Error, Result};
@@ -14,3 +15,4 @@ pub use model::{
     NoteType, Rating, ReviewLog, ReviewLogId,
 };
 pub use scheduler::{ButtonPreview, ReviewOutcome, SchedulePreview, Scheduler};
+pub use template::{template, NoteTemplate, TemplateKind, TEMPLATES};

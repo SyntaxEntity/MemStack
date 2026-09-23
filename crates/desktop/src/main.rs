@@ -48,6 +48,7 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            commands::list_templates,
             commands::list_decks,
             commands::ensure_deck,
             commands::list_notes,

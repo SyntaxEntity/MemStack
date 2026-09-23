@@ -18,6 +18,42 @@ pub struct Db(pub Storage);
 
 pub struct ReviewState(pub Mutex<Option<ReviewSession>>);
 
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TemplateDto {
+    pub id: String,
+    pub name: String,
+    pub summary: String,
+    pub kind: String,
+    pub tags: Vec<String>,
+    pub front: String,
+    pub back: String,
+    pub text: String,
+    pub code: String,
+    pub language: String,
+    pub extra: String,
+}
+
+#[tauri::command]
+pub fn list_templates() -> Vec<TemplateDto> {
+    memstack_core::TEMPLATES
+        .iter()
+        .map(|t| TemplateDto {
+            id: t.id.to_string(),
+            name: t.name.to_string(),
+            summary: t.summary.to_string(),
+            kind: t.kind.as_str().to_string(),
+            tags: t.tags.iter().map(|s| s.to_string()).collect(),
+            front: t.front.to_string(),
+            back: t.back.to_string(),
+            text: t.text.to_string(),
+            code: t.code.to_string(),
+            language: t.language.to_string(),
+            extra: t.extra.to_string(),
+        })
+        .collect()
+}
+
 fn as_deck_id(id: i64) -> DeckId {
     DeckId(id)
 }

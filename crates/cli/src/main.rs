@@ -26,7 +26,7 @@ struct Cli {
 
 #[derive(Subcommand, Debug)]
 enum Command {
-    /// 造卡：问答 / 填空 / 代码填空
+    /// 造卡：问答 / 填空 / 代码填空，或 --template 套模板
     Add {
         /// 牌组名
         #[arg(long)]
@@ -34,8 +34,16 @@ enum Command {
         /// 标签，逗号分隔
         #[arg(long, value_delimiter = ',')]
         tags: Vec<String>,
+        /// 内置模板 id（见 `memstack templates`）
+        #[arg(long)]
+        template: Option<String>,
         #[command(subcommand)]
-        kind: AddKind,
+        kind: Option<AddKind>,
+    },
+    /// 列出 / 查看造卡模板
+    Templates {
+        /// 模板 id；省略则列出全部
+        id: Option<String>,
     },
     /// 列出牌组
     Decks,
@@ -115,7 +123,18 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
     let db = memstack_storage::Storage::open(&cli.db).await?;
 
     match cli.command {
-        Command::Add { deck, tags, kind } => add::run(&db, &deck, &tags, kind).await?,
+        Command::Add {
+            deck,
+            tags,
+            template,
+            kind,
+        } => {
+            add::run(&db, &deck, &tags, template.as_deref(), kind).await?;
+        }
+        Command::Templates { id } => match id.as_deref() {
+            Some(id) => add::show_template(id).await?,
+            None => add::list_templates().await,
+        },
         Command::Decks => {
             for deck in db.list_decks().await? {
                 println!("{}", deck.name);

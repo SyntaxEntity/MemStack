@@ -307,6 +307,22 @@ input:focus, textarea:focus {
 .rate-row button[data-id="good"] { border-color: var(--ok); }
 .rate-row button[data-id="easy"] { border-color: var(--accent); }
 
+.kind-tabs .tpl-row {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+.kind-tabs .tpl-row select {
+  background: #0f1520;
+  color: var(--text, #e8eef7);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
 #review-hint { margin-bottom: 10px; font-size: 13px; }
 .done {
   text-align: center;
