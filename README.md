@@ -165,6 +165,8 @@ crates/import     Markdown / CSV / apkg 导入
 crates/cli        CLI + TUI
 crates/desktop    Tauri 壳（浏览/新建/编辑/跑测）
 crates/server     同步服务（AGPLv3，账号+增量同步，见其 README）
+crates/sync       客户端同步适配（UUID 映射 + push/pull）
+Dockerfile        同步服务镜像（compose.yaml 一键起）
 docs/             方案
 ```
 

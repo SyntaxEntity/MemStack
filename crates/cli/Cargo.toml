@@ -19,6 +19,7 @@ crossterm.workspace = true
 memstack-core.workspace = true
 memstack-import.workspace = true
 memstack-storage.workspace = true
+memstack-sync.workspace = true
 ratatui.workspace = true
 tokio.workspace = true
 

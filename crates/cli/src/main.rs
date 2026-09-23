@@ -4,6 +4,7 @@ use std::path::PathBuf;
 mod add;
 mod import;
 mod review;
+mod sync;
 mod term;
 mod tui;
 
@@ -64,6 +65,11 @@ enum Command {
     },
     /// 交互浏览：牌组 → 卡片列表 → 复习
     Tui,
+    /// 同步：register / login / status / push / pull / run
+    Sync {
+        #[command(subcommand)]
+        cmd: sync::SyncCmd,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -121,6 +127,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
             dry_run,
         } => import::run(&db, &path, deck.as_deref(), dry_run).await?,
         Command::Tui => tui::run(&db).await?,
+        Command::Sync { cmd } => sync::run(&db, cmd).await?,
         Command::Stats { deck } => {
             let deck_id = match deck.as_deref() {
                 Some(name) => db.get_deck_by_name(name).await?.map(|d| d.id),

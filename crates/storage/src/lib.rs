@@ -73,6 +73,11 @@ pub struct Storage {
 }
 
 impl Storage {
+    /// 底层连接池（同步适配共用同一文件）。
+    pub fn pool(&self) -> &SqlitePool {
+        &self.pool
+    }
+
     /// 打开（或创建）单文件数据库并跑迁移。
     pub async fn open(path: impl AsRef<Path>) -> Result<Self> {
         let options = SqliteConnectOptions::new()
@@ -875,6 +880,164 @@ impl Storage {
     pub async fn scheduler_for(&self, deck_id: DeckId) -> Result<Scheduler> {
         let params = self.deck_params_or_default(deck_id).await?;
         Ok(Scheduler::new(&params)?)
+    }
+
+    // ---------- 同步用批量读 / 全量写 ----------
+
+    pub async fn list_all_notes(&self, limit: u32) -> Result<Vec<Note>> {
+        let rows = sqlx::query("SELECT * FROM notes ORDER BY id LIMIT ?1")
+            .bind(i64::from(limit))
+            .fetch_all(&self.pool)
+            .await?;
+        rows.into_iter().map(row_to_note).collect()
+    }
+
+    pub async fn list_all_cards(&self, limit: u32) -> Result<Vec<Card>> {
+        let rows = sqlx::query("SELECT * FROM cards ORDER BY id LIMIT ?1")
+            .bind(i64::from(limit))
+            .fetch_all(&self.pool)
+            .await?;
+        rows.into_iter().map(row_to_card).collect()
+    }
+
+    pub async fn list_all_review_logs(&self, limit: u32) -> Result<Vec<ReviewLog>> {
+        let rows = sqlx::query("SELECT * FROM review_logs ORDER BY id LIMIT ?1")
+            .bind(i64::from(limit))
+            .fetch_all(&self.pool)
+            .await?;
+        rows.into_iter().map(row_to_review_log).collect()
+    }
+
+    /// 按名字写入牌组（带远端时间戳）。重名时返回已有。
+    pub async fn put_deck_by_name(
+        &self,
+        name: &str,
+        parent_id: Option<DeckId>,
+        created_at: DateTime<Utc>,
+        updated_at: DateTime<Utc>,
+    ) -> Result<Deck> {
+        if let Some(existing) = self.get_deck_by_name(name).await? {
+            return Ok(existing);
+        }
+        let result = sqlx::query(
+            "INSERT INTO decks (name, parent_id, created_at, updated_at) VALUES (?1, ?2, ?3, ?4)",
+        )
+        .bind(name)
+        .bind(parent_id.map(|p| p.0))
+        .bind(to_ms(created_at))
+        .bind(to_ms(updated_at))
+        .execute(&self.pool)
+        .await?;
+        Ok(Deck {
+            id: DeckId(result.last_insert_rowid()),
+            name: name.to_string(),
+            parent_id,
+            created_at,
+            updated_at,
+        })
+    }
+
+    /// 插入完整笔记行（同步落地，保留远端 id 无关的时间戳）。
+    pub async fn insert_note_full(&self, note: &Note) -> Result<NoteId> {
+        let content_json = serde_json::to_string(&note.content)?;
+        let tags_json = serde_json::to_string(&note.tags)?;
+        let result = sqlx::query(
+            "INSERT INTO notes (deck_id, content, tags, source, created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        )
+        .bind(note.deck_id.0)
+        .bind(content_json)
+        .bind(tags_json)
+        .bind(&note.source)
+        .bind(to_ms(note.created_at))
+        .bind(to_ms(note.updated_at))
+        .execute(&self.pool)
+        .await?;
+        Ok(NoteId(result.last_insert_rowid()))
+    }
+
+    pub async fn update_note_full(&self, note: &Note) -> Result<()> {
+        let content_json = serde_json::to_string(&note.content)?;
+        let tags_json = serde_json::to_string(&note.tags)?;
+        sqlx::query(
+            "UPDATE notes SET deck_id = ?1, content = ?2, tags = ?3, source = ?4,
+                              created_at = ?5, updated_at = ?6
+             WHERE id = ?7",
+        )
+        .bind(note.deck_id.0)
+        .bind(content_json)
+        .bind(tags_json)
+        .bind(&note.source)
+        .bind(to_ms(note.created_at))
+        .bind(to_ms(note.updated_at))
+        .bind(note.id.0)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
+    }
+
+    /// 插入完整卡行（含调度状态）。
+    pub async fn insert_card_full(&self, card: &Card) -> Result<CardId> {
+        let result = sqlx::query(
+            "INSERT INTO cards
+             (note_id, deck_id, card_type, ordinal, front, back, state, step,
+              stability, difficulty, due, last_review, reps, lapses, suspended,
+              created_at, updated_at)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17)",
+        )
+        .bind(card.note_id.0)
+        .bind(card.deck_id.0)
+        .bind(card_type_to_str(card.card_type))
+        .bind(i64::from(card.ordinal))
+        .bind(&card.front)
+        .bind(&card.back)
+        .bind(state_to_str(card.state))
+        .bind(i64::from(card.step))
+        .bind(card.stability)
+        .bind(card.difficulty)
+        .bind(to_ms(card.due))
+        .bind(to_ms_opt(card.last_review))
+        .bind(i64::from(card.reps))
+        .bind(i64::from(card.lapses))
+        .bind(i64::from(card.suspended))
+        .bind(to_ms(card.created_at))
+        .bind(to_ms(card.updated_at))
+        .execute(&self.pool)
+        .await?;
+        Ok(CardId(result.last_insert_rowid()))
+    }
+
+    pub async fn update_card_full(&self, card: &Card) -> Result<()> {
+        sqlx::query(
+            "UPDATE cards SET
+                note_id = ?1, deck_id = ?2, card_type = ?3, ordinal = ?4,
+                front = ?5, back = ?6, state = ?7, step = ?8,
+                stability = ?9, difficulty = ?10, due = ?11, last_review = ?12,
+                reps = ?13, lapses = ?14, suspended = ?15,
+                created_at = ?16, updated_at = ?17
+             WHERE id = ?18",
+        )
+        .bind(card.note_id.0)
+        .bind(card.deck_id.0)
+        .bind(card_type_to_str(card.card_type))
+        .bind(i64::from(card.ordinal))
+        .bind(&card.front)
+        .bind(&card.back)
+        .bind(state_to_str(card.state))
+        .bind(i64::from(card.step))
+        .bind(card.stability)
+        .bind(card.difficulty)
+        .bind(to_ms(card.due))
+        .bind(to_ms_opt(card.last_review))
+        .bind(i64::from(card.reps))
+        .bind(i64::from(card.lapses))
+        .bind(i64::from(card.suspended))
+        .bind(to_ms(card.created_at))
+        .bind(to_ms(card.updated_at))
+        .bind(card.id.0)
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 }
 
