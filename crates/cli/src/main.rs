@@ -61,6 +61,17 @@ enum Command {
         #[command(flatten)]
         args: stats::StatsArgs,
     },
+    /// 从 JSON 造卡（编辑器集成）。`path` 为 `-` 时读 stdin。
+    AddJson {
+        /// 牌组名
+        #[arg(long)]
+        deck: String,
+        /// 标签，逗号分隔
+        #[arg(long, value_delimiter = ',')]
+        tags: Vec<String>,
+        /// JSON 文件路径，或 `-`
+        path: PathBuf,
+    },
     /// 从 Markdown / CSV / Anki 导入。Markdown 可单文件或目录（*.md）。
     Import {
         /// .md 文件、目录、.csv，或 .apkg
@@ -135,6 +146,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
             Some(id) => add::show_template(id).await?,
             None => add::list_templates().await,
         },
+        Command::AddJson { deck, tags, path } => add::run_json(&db, &deck, &tags, &path).await?,
         Command::Decks => {
             for deck in db.list_decks().await? {
                 println!("{}", deck.name);

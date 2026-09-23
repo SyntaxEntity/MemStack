@@ -107,3 +107,99 @@ pub async fn run(
 fn first_line(s: &str) -> &str {
     s.lines().next().unwrap_or("")
 }
+
+/// 编辑器集成：JSON → 笔记。字段与 desktop `NoteInput` 对齐。
+#[derive(Debug, serde::Deserialize)]
+struct JsonNote {
+    kind: String,
+    #[serde(default)]
+    deck: Option<String>,
+    #[serde(default)]
+    front: String,
+    #[serde(default)]
+    back: String,
+    #[serde(default)]
+    text: String,
+    #[serde(default)]
+    code: String,
+    #[serde(default)]
+    language: String,
+    #[serde(default)]
+    extra: String,
+    #[serde(default)]
+    tags: Vec<String>,
+}
+
+pub async fn run_json(
+    db: &Storage,
+    deck_name: &str,
+    tags: &[String],
+    path: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    use std::io::Read;
+    let raw = if path.as_os_str() == "-" {
+        let mut s = String::new();
+        std::io::stdin().read_to_string(&mut s)?;
+        s
+    } else {
+        std::fs::read_to_string(path)?
+    };
+    let item: JsonNote = serde_json::from_str(&raw)?;
+    let content = match item.kind.as_str() {
+        "qa" => {
+            if item.front.trim().is_empty() || item.back.trim().is_empty() {
+                return Err("问答卡需要 front/back".into());
+            }
+            NoteContent::QuestionAnswer {
+                front: item.front.trim().to_string(),
+                back: item.back.trim().to_string(),
+            }
+        }
+        "cloze" => {
+            if !item.text.contains("{{c") {
+                return Err("填空卡需要 {{c1::答案}}".into());
+            }
+            NoteContent::Cloze {
+                text: item.text,
+                extra: item.extra,
+            }
+        }
+        "code" => {
+            if !item.code.contains("{{c") {
+                return Err("代码填空需要 {{c1::答案}}".into());
+            }
+            NoteContent::CodeCloze {
+                code: item.code,
+                language: item.language,
+                extra: item.extra,
+            }
+        }
+        other => return Err(format!("未知 kind：{other}").into()),
+    };
+    let mut tags_out: BTreeSet<String> = tags.iter().cloned().collect();
+    tags_out.extend(item.tags.iter().cloned());
+    let deck_name = item.deck.as_deref().unwrap_or(deck_name);
+    let now = Utc::now();
+    let deck = db.deck_ensure(deck_name, now).await?;
+    let (note, cards) = db
+        .add_note(
+            NewNote {
+                deck_id: deck.id,
+                content,
+                tags: tags_out,
+                source: None,
+            },
+            now,
+        )
+        .await?;
+    println!(
+        "已添加笔记 {} → {} 张卡（{}）",
+        note.id,
+        cards.len(),
+        deck.name
+    );
+    for card in &cards {
+        println!("  [{}] {}", card.id, first_line(&card.front));
+    }
+    Ok(())
+}

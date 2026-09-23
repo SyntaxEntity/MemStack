@@ -20,6 +20,7 @@ memstack-core.workspace = true
 memstack-import.workspace = true
 memstack-storage.workspace = true
 memstack-sync.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 ratatui.workspace = true
 tokio.workspace = true
