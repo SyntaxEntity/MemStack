@@ -2,7 +2,7 @@
 
 忆栈同步服务。账号、多端增量同步、冲突处理。**自建免费，体验和官方托管一致。**
 
-> **当前状态**：骨架。接口与部署形态按 [方案](../../docs/方案.md) 定稿，实现排在第二版（自建同步服务）。下面的部署步骤是目标形态，服务未实现前照着跑只会起一个空进程。
+> **当前状态**：v1 已实现——账号（注册/登录/Bearer 令牌）、增量同步（pull/push）、冲突合并（`review_log` 只增去重，其余 LWW）。客户端对接与 Docker 镜像待做。下面是部署目标形态。
 
 ## 许可证：AGPL-3.0-only
 
@@ -132,9 +132,28 @@ docker run --rm -v memstack-data:/data -v "$(pwd):/backup" \
 ```bash
 cargo build -p memstack-server
 cargo test -p memstack-server
+./target/debug/memstack-server --bind 127.0.0.1:8080 --data ./data
 ```
 
-技术选型见方案：axum + tokio，表结构与客户端共用五张表的设计（decks、notes、cards、review_logs、deck_params），同步冲突靠「复习记录只增不改」兜底。
+### HTTP API（v1）
+
+| 方法 | 路径 | 说明 |
+|---|---|---|
+| GET | `/health` | 健康检查 |
+| POST | `/v1/auth/register` | `{"username","password"}` → `{"token","user_id"}` |
+| POST | `/v1/auth/login` | 同上 |
+| GET | `/v1/sync/pull?since=SEQ&limit=N` | 增量拉取 `seq > since` → `{"items","cursor","has_more"}` |
+| POST | `/v1/sync/push` | `{"items":[{item_id,kind,deleted,updated_at,payload}]}` → `{"cursor","applied"}` |
+
+`kind`：`deck` / `note` / `card` / `review_log` / `deck_params`。`item_id` 由客户端生成（建议 UUID）。
+
+冲突规则：
+
+- `review_log`：按 `item_id` 只增不改，重复推送跳过
+- 其余：LWW，`updated_at` 大者胜；相等保留已有
+- `deleted: true` 为墓碑，供其他端删本地副本
+
+技术选型见方案：axum + tokio + SQLite；服务端自用库与客户端五张业务表分离，同步以变更条目为粒度。
 
 ## 和「核心免费」的关系
 

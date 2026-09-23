@@ -163,8 +163,8 @@ crates/storage    SQLite 与迁移
 crates/markdown   渲染
 crates/import     Markdown / CSV / apkg 导入
 crates/cli        CLI + TUI
-crates/desktop    Tauri 壳（骨架）
-crates/server     同步服务（骨架，AGPLv3，见其 README）
+crates/desktop    Tauri 壳（浏览/新建/编辑/跑测）
+crates/server     同步服务（AGPLv3，账号+增量同步，见其 README）
 docs/             方案
 ```
 

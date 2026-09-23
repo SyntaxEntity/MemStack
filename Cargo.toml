@@ -23,7 +23,7 @@ license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
 chrono = { version = "0.4", features = ["serde"] }
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 crossterm = "0.29"
 csv = "1"
 fsrs = "6.6.2"
@@ -35,6 +35,13 @@ tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 ratatui = "0.29"
 zip = { version = "2", default-features = false, features = ["deflate"] }
 rusqlite = { version = "0.34", features = ["bundled"] }
+axum = "0.8"
+argon2 = { version = "0.5", features = ["std"] }
+rand = "0.8"
+sha2 = "0.10"
+hex = "0.4"
+tower-http = { version = "0.6", features = ["trace"] }
+tower = "0.5"
 
 # workspace 内部依赖，版本与 workspace.package 同步
 memstack-core = { path = "crates/core", version = "0.1.0" }
