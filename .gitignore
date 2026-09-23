@@ -1,6 +1,9 @@
 # Rust 构建产物
 /target
 
+# Tauri 构建生成
+crates/desktop/gen/
+
 # 本地数据库与数据文件
 *.sqlite
 *.sqlite3

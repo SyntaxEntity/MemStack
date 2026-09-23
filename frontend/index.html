@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>忆栈 MemStack</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside id="sidebar">
+        <header class="side-head">
+          <h1>忆栈</h1>
+          <button id="btn-new-note" class="primary" title="新建笔记">＋ 新建</button>
+        </header>
+        <nav id="deck-list"></nav>
+        <footer class="side-foot">
+          <button id="btn-review-all">开始复习</button>
+        </footer>
+      </aside>
+      <main id="main">
+        <header id="main-head">
+          <div>
+            <h2 id="main-title">选一个牌组</h2>
+            <p id="main-sub" class="muted"></p>
+          </div>
+          <div class="head-actions">
+            <button id="btn-review-deck">复习此牌组</button>
+          </div>
+        </header>
+        <section id="note-list"></section>
+      </main>
+    </div>
+
+    <!-- 编辑器 -->
+    <div id="editor-overlay" class="overlay hidden">
+      <div class="panel editor">
+        <header>
+          <h3 id="editor-title">新建笔记</h3>
+          <button class="ghost" id="editor-close">关闭</button>
+        </header>
+        <div class="kind-tabs">
+          <button data-kind="qa" class="tab active">问答</button>
+          <button data-kind="cloze" class="tab">填空</button>
+          <button data-kind="code" class="tab">代码填空</button>
+        </div>
+        <div class="fields">
+          <label class="row">
+            <span>牌组</span>
+            <input id="f-deck" placeholder="算法" />
+          </label>
+          <label class="row">
+            <span>标签</span>
+            <input id="f-tags" placeholder="leetcode, 二分（逗号分隔）" />
+          </label>
+
+          <div id="pane-qa" class="pane">
+            <label class="col">
+              <span>正面</span>
+              <textarea id="f-front" rows="5" placeholder="问题（Markdown）"></textarea>
+            </label>
+            <label class="col">
+              <span>背面</span>
+              <textarea id="f-back" rows="5" placeholder="答案（Markdown）"></textarea>
+            </label>
+          </div>
+
+          <div id="pane-cloze" class="pane hidden">
+            <label class="col">
+              <span>正文</span>
+              <textarea id="f-text" rows="8" placeholder="首都是{{c1::北京}}，是{{c2::政治}}中心"></textarea>
+            </label>
+            <label class="col">
+              <span>补充</span>
+              <textarea id="f-extra-cloze" rows="3"></textarea>
+            </label>
+          </div>
+
+          <div id="pane-code" class="pane hidden">
+            <label class="row">
+              <span>语言</span>
+              <input id="f-language" placeholder="rust / sql / ..." />
+            </label>
+            <label class="col">
+              <span>代码（用 {{c1::答案}} 挖洞）</span>
+              <textarea id="f-code" rows="10" class="mono" placeholder="let m = l + ({{c1::r - l}}) / 2;"></textarea>
+            </label>
+            <label class="col">
+              <span>补充</span>
+              <textarea id="f-extra-code" rows="3"></textarea>
+            </label>
+          </div>
+        </div>
+        <p id="editor-error" class="error"></p>
+        <footer>
+          <button id="editor-save" class="primary">保存</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- 复习 -->
+    <div id="review-overlay" class="overlay hidden">
+      <div class="review">
+        <header>
+          <div id="review-meta" class="muted"></div>
+          <div id="review-usage" class="muted"></div>
+          <button class="ghost" id="review-quit">退出 (q)</button>
+        </header>
+        <article id="review-card">
+          <div id="review-front" class="face"></div>
+          <div id="review-divider" class="divider hidden"></div>
+          <div id="review-back" class="face hidden"></div>
+        </article>
+        <div id="review-hint" class="muted">空格显示答案 · u 撤销 · q 退出</div>
+        <div id="review-buttons" class="rate-row hidden"></div>
+        <div id="review-done" class="done hidden">
+          <h3>本批完成</h3>
+          <p id="review-done-text" class="muted"></p>
+          <button class="primary" id="review-done-close">返回</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

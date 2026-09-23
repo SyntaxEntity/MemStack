@@ -323,6 +323,164 @@ impl Storage {
         Ok(n)
     }
 
+    pub async fn get_note(&self, id: NoteId) -> Result<Option<Note>> {
+        let row = sqlx::query(
+            "SELECT id, deck_id, content, tags, source, created_at, updated_at
+             FROM notes WHERE id = ?1",
+        )
+        .bind(id.0)
+        .fetch_optional(&self.pool)
+        .await?;
+        row.map(row_to_note).transpose()
+    }
+
+    /// 浏览用：牌组下的笔记，最近更新在前。
+    pub async fn list_notes(&self, deck_id: DeckId, limit: u32) -> Result<Vec<Note>> {
+        let rows = sqlx::query(
+            "SELECT id, deck_id, content, tags, source, created_at, updated_at
+             FROM notes WHERE deck_id = ?1
+             ORDER BY updated_at DESC, id DESC
+             LIMIT ?2",
+        )
+        .bind(deck_id.0)
+        .bind(i64::from(limit))
+        .fetch_all(&self.pool)
+        .await?;
+        rows.into_iter().map(row_to_note).collect()
+    }
+
+    /// 笔记下的全部卡片。
+    pub async fn list_cards_for_note(&self, note_id: NoteId) -> Result<Vec<Card>> {
+        let rows = sqlx::query("SELECT * FROM cards WHERE note_id = ?1 ORDER BY ordinal, id")
+            .bind(note_id.0)
+            .fetch_all(&self.pool)
+            .await?;
+        rows.into_iter().map(row_to_card).collect()
+    }
+
+    /// 编辑笔记：改内容/标签/牌组，按 ordinal 重生成卡面并尽量保留调度状态。
+    ///
+    /// 序号仍存在的卡只更新正反面；新增序号插入新卡；消失的序号删卡
+    /// （连带其复习日志——挖空没了，那张卡就不存在了）。
+    pub async fn update_note(
+        &self,
+        note_id: NoteId,
+        content: NoteContent,
+        tags: BTreeSet<String>,
+        deck_id: DeckId,
+        now: DateTime<Utc>,
+    ) -> Result<(Note, Vec<Card>)> {
+        let existing = self.get_note(note_id).await?.ok_or(Error::NotFound)?;
+        let drafts = generate_cards(&content)?;
+        let old_cards = self.list_cards_for_note(note_id).await?;
+        let ms = to_ms(now);
+        let content_json = serde_json::to_string(&content)?;
+        let tags_json = serde_json::to_string(&tags)?;
+
+        let mut tx = self.pool.begin().await?;
+
+        sqlx::query(
+            "UPDATE notes SET deck_id = ?1, content = ?2, tags = ?3, updated_at = ?4 WHERE id = ?5",
+        )
+        .bind(deck_id.0)
+        .bind(&content_json)
+        .bind(&tags_json)
+        .bind(ms)
+        .bind(note_id.0)
+        .execute(&mut *tx)
+        .await?;
+
+        let mut by_ordinal: std::collections::BTreeMap<u16, Card> =
+            old_cards.into_iter().map(|c| (c.ordinal, c)).collect();
+
+        let mut cards = Vec::with_capacity(drafts.len());
+        for draft in &drafts {
+            if let Some(old) = by_ordinal.remove(&draft.ordinal) {
+                sqlx::query(
+                    "UPDATE cards SET
+                        deck_id = ?1, card_type = ?2, front = ?3, back = ?4, updated_at = ?5
+                     WHERE id = ?6",
+                )
+                .bind(deck_id.0)
+                .bind(card_type_to_str(draft.card_type))
+                .bind(&draft.front)
+                .bind(&draft.back)
+                .bind(ms)
+                .bind(old.id.0)
+                .execute(&mut *tx)
+                .await?;
+
+                let mut updated = old;
+                updated.deck_id = deck_id;
+                updated.card_type = draft.card_type;
+                updated.front = draft.front.clone();
+                updated.back = draft.back.clone();
+                updated.updated_at = now;
+                cards.push(updated);
+            } else {
+                let card_result = sqlx::query(
+                    "INSERT INTO cards
+                     (note_id, deck_id, card_type, ordinal, front, back, state, step,
+                      stability, difficulty, due, last_review, reps, lapses, suspended,
+                      created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, 'new', 0,
+                             NULL, NULL, ?7, NULL, 0, 0, 0, ?8, ?8)",
+                )
+                .bind(note_id.0)
+                .bind(deck_id.0)
+                .bind(card_type_to_str(draft.card_type))
+                .bind(i64::from(draft.ordinal))
+                .bind(&draft.front)
+                .bind(&draft.back)
+                .bind(ms)
+                .bind(ms)
+                .execute(&mut *tx)
+                .await?;
+
+                cards.push(Card {
+                    id: CardId(card_result.last_insert_rowid()),
+                    note_id,
+                    deck_id,
+                    card_type: draft.card_type,
+                    ordinal: draft.ordinal,
+                    front: draft.front.clone(),
+                    back: draft.back.clone(),
+                    state: CardState::New,
+                    step: 0,
+                    stability: None,
+                    difficulty: None,
+                    due: now,
+                    last_review: None,
+                    reps: 0,
+                    lapses: 0,
+                    suspended: false,
+                    created_at: now,
+                    updated_at: now,
+                });
+            }
+        }
+
+        for orphan in by_ordinal.values() {
+            sqlx::query("DELETE FROM cards WHERE id = ?1")
+                .bind(orphan.id.0)
+                .execute(&mut *tx)
+                .await?;
+        }
+
+        tx.commit().await?;
+
+        let note = Note {
+            id: note_id,
+            deck_id,
+            content,
+            tags,
+            source: existing.source,
+            created_at: existing.created_at,
+            updated_at: now,
+        };
+        Ok((note, cards))
+    }
+
     pub async fn get_card(&self, id: CardId) -> Result<Option<Card>> {
         let row = sqlx::query("SELECT * FROM cards WHERE id = ?1")
             .bind(id.0)
@@ -722,6 +880,20 @@ impl Storage {
 
 // ---------- row 映射 ----------
 
+fn row_to_note(row: SqliteRow) -> Result<Note> {
+    let content_json: String = row.try_get("content")?;
+    let tags_json: String = row.try_get("tags")?;
+    Ok(Note {
+        id: NoteId(row.try_get("id")?),
+        deck_id: DeckId(row.try_get("deck_id")?),
+        content: serde_json::from_str(&content_json)?,
+        tags: serde_json::from_str(&tags_json)?,
+        source: row.try_get("source")?,
+        created_at: from_ms(row.try_get("created_at")?)?,
+        updated_at: from_ms(row.try_get("updated_at")?)?,
+    })
+}
+
 fn row_to_deck(row: SqliteRow) -> Result<Deck> {
     Ok(Deck {
         id: DeckId(row.try_get("id")?),
@@ -936,6 +1108,98 @@ mod tests {
 
         let counts = db.queue_counts(t, None).await.unwrap();
         assert_eq!(counts.new, 5);
+    }
+
+    #[tokio::test]
+    async fn update_note_preserves_schedule_by_ordinal() {
+        let db = Storage::open_in_memory().await.unwrap();
+        let t = now();
+        let deck = db.deck_ensure("地理", t).await.unwrap();
+        let (note, cards) = db
+            .add_note(
+                NewNote {
+                    deck_id: deck.id,
+                    content: NoteContent::Cloze {
+                        text: "{{c1::北京}}是{{c2::首都}}".into(),
+                        extra: String::new(),
+                    },
+                    tags: BTreeSet::new(),
+                    source: None,
+                },
+                t,
+            )
+            .await
+            .unwrap();
+        assert_eq!(cards.len(), 2);
+
+        let mut first = cards[0].clone();
+        first.state = CardState::Review;
+        first.reps = 3;
+        first.stability = Some(4.0);
+        first.difficulty = Some(5.0);
+        first.due = t + chrono::Duration::days(2);
+        let log = ReviewLog {
+            id: None,
+            card_id: first.id,
+            reviewed_at: t,
+            rating: Rating::Good,
+            state_before: CardState::New,
+            step_before: 0,
+            stability_before: None,
+            difficulty_before: None,
+            interval_days: 2.0,
+            elapsed_days: 0,
+            duration_ms: 10,
+        };
+        db.save_review(&first, &log).await.unwrap();
+
+        // 编辑：c2 消失，c1 答案改掉，新增 c3（ordinal = cN-1，空洞保留）
+        let (updated, new_cards) = db
+            .update_note(
+                note.id,
+                NoteContent::Cloze {
+                    text: "{{c1::上海}}是{{c3::魔都}}".into(),
+                    extra: String::new(),
+                },
+                BTreeSet::from(["t".into()]),
+                deck.id,
+                t + chrono::Duration::minutes(5),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(updated.tags.len(), 1);
+        assert_eq!(new_cards.len(), 2);
+        let kept = new_cards.iter().find(|c| c.ordinal == 0).unwrap();
+        assert_eq!(kept.id, cards[0].id);
+        assert_eq!(kept.state, CardState::Review);
+        assert_eq!(kept.reps, 3);
+        assert_eq!(kept.stability, Some(4.0));
+        assert!(kept.back.contains("上海"));
+
+        let added = new_cards.iter().find(|c| c.ordinal == 2).unwrap();
+        assert_eq!(added.state, CardState::New);
+
+        // 被删掉的 c2 卡（ordinal 1）不在了
+        assert!(db.get_card(cards[1].id).await.unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn list_and_get_note() {
+        let db = Storage::open_in_memory().await.unwrap();
+        let t = now();
+        let deck = db.deck_ensure("算法", t).await.unwrap();
+        let (note, _) = db.add_note(qa_note(deck.id), t).await.unwrap();
+
+        let got = db.get_note(note.id).await.unwrap().unwrap();
+        assert_eq!(got.id, note.id);
+
+        let listed = db.list_notes(deck.id, 10).await.unwrap();
+        assert_eq!(listed.len(), 1);
+        assert_eq!(listed[0].id, note.id);
+
+        let cards = db.list_cards_for_note(note.id).await.unwrap();
+        assert_eq!(cards.len(), 1);
     }
 
     #[tokio::test]

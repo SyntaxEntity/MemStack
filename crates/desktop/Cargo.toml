@@ -12,7 +12,17 @@ license.workspace = true
 name = "memstack-desktop"
 path = "src/main.rs"
 
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
 [dependencies]
+chrono.workspace = true
+memstack-core.workspace = true
+memstack-storage.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tauri = { version = "2", features = [] }
+tokio.workspace = true
 
 [lints]
 workspace = true

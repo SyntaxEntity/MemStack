@@ -105,12 +105,14 @@ fn cloze_cards(text: &str, card_type: CardType) -> Result<Vec<CardDraft>> {
     }
 
     let mut drafts = Vec::with_capacity(ids.len());
-    for (ordinal, id) in ids.into_iter().enumerate() {
+    for id in ids {
+        // 与 Anki `ord = cN - 1` 对齐，编号有空洞时也保持稳定，便于编辑时按序号对卡
+        let ordinal = id.saturating_sub(1) as u16;
         let front = render(&segments, Some(id), true);
         let back = render(&segments, Some(id), false);
         drafts.push(CardDraft {
             card_type,
-            ordinal: ordinal as u16,
+            ordinal,
             front,
             back,
         });
@@ -242,6 +244,14 @@ mod tests {
         assert_eq!(cards[1].ordinal, 1);
         assert_eq!(cards[1].front, "TCP 在 [...]。");
         assert_eq!(cards[1].back, "TCP 在 传输层。");
+    }
+
+    #[test]
+    fn ordinal_is_cloze_id_minus_one_with_gaps() {
+        let cards = drafts("{{c1::a}} {{c3::b}}");
+        assert_eq!(cards.len(), 2);
+        assert_eq!(cards[0].ordinal, 0);
+        assert_eq!(cards[1].ordinal, 2);
     }
 
     #[test]

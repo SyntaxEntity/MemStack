@@ -185,7 +185,7 @@ pub struct Card {
     pub note_id: NoteId,
     pub deck_id: DeckId,
     pub card_type: CardType,
-    /// 填空序号（0 起）。问答卡恒为 0。
+    /// 填空序号 = `cN - 1`（与 Anki `ord` 一致，可有空洞）。问答卡恒为 0。
     pub ordinal: u16,
     pub front: String,
     pub back: String,
