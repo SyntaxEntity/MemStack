@@ -1,0 +1,13 @@
+target
+.git
+.gitignore
+**/*.sqlite
+**/*.sqlite3
+**/*.db
+/data
+*.md
+!crates/server/README.md
+.github
+frontend
+docs
+LICENSE-*

@@ -61,7 +61,33 @@ async fn main() {
         cli.bind,
         db_path.display()
     );
-    axum::serve(listener, app(state)).await.expect("服务退出");
+    axum::serve(listener, app(state))
+        .with_graceful_shutdown(shutdown_signal())
+        .await
+        .expect("服务退出");
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        let _ = tokio::signal::ctrl_c().await;
+    };
+    #[cfg(unix)]
+    let term = async {
+        use tokio::signal::unix::{signal, SignalKind};
+        match signal(SignalKind::terminate()) {
+            Ok(mut s) => {
+                s.recv().await;
+            }
+            Err(_) => std::future::pending::<()>().await,
+        }
+    };
+    #[cfg(not(unix))]
+    let term = std::future::pending::<()>();
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = term => {},
+    }
+    eprintln!("shutting down");
 }
 
 #[cfg(test)]

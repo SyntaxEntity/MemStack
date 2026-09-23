@@ -2,7 +2,7 @@
 
 忆栈同步服务。账号、多端增量同步、冲突处理。**自建免费，体验和官方托管一致。**
 
-> **当前状态**：v1 已实现——账号（注册/登录/Bearer 令牌）、增量同步（pull/push）、冲突合并（`review_log` 只增去重，其余 LWW）。客户端对接与 Docker 镜像待做。下面是部署目标形态。
+> **当前状态**：v1 已实现——账号（注册/登录/Bearer 令牌）、增量同步（pull/push）、冲突合并（`review_log` 只增去重，其余 LWW）。CLI 已可对接：`memstack sync register|login|push|pull|run`。Docker 镜像：仓库根 `Dockerfile` + `compose.yaml`。
 
 ## 许可证：AGPL-3.0-only
 
@@ -112,8 +112,9 @@ Nginx 要点：`proxy_pass` 到上游，带上 `Upgrade` / `Connection` 头（�
 
 ```bash
 memstack --db memstack.sqlite
-# 同步服务实现后：在客户端设置同步地址
-memstack config set sync https://sync.example.com
+# 指向自托管同步
+memstack --db memstack.sqlite sync register --url https://sync.example.com --username you --password ...
+memstack --db memstack.sqlite sync run
 ```
 
 ### 升级与备份
@@ -133,6 +134,33 @@ docker run --rm -v memstack-data:/data -v "$(pwd):/backup" \
 cargo build -p memstack-server
 cargo test -p memstack-server
 ./target/debug/memstack-server --bind 127.0.0.1:8080 --data ./data
+```
+
+### 构建镜像
+
+仓库根目录有 `Dockerfile` 与 `compose.yaml`：
+
+```bash
+docker build -t memstack-server .
+# 或
+podman build -t memstack-server .
+docker compose up -d
+```
+
+网络受限时指定镜像源：
+
+```bash
+docker build -t memstack-server \
+  --build-arg RUST_IMAGE=docker.m.daocloud.io/library/rust:1.97-bookworm \
+  --build-arg RUNTIME_IMAGE=docker.m.daocloud.io/library/debian:bookworm-slim \
+  .
+```
+
+推送到 GHCR（master / v* 标签由 `.github/workflows/docker.yml` 自动构建）：
+
+```bash
+docker tag memstack-server ghcr.io/memstack/memstack-server:latest
+docker push ghcr.io/memstack/memstack-server:latest
 ```
 
 ### HTTP API（v1）

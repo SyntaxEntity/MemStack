@@ -1,0 +1,16 @@
+# 忆栈同步服务。数据在命名卷 memstack-data 里。
+services:
+  memstack:
+    build: .
+    image: ghcr.io/memstack/memstack-server:latest
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - memstack-data:/data
+    environment:
+      MEMSTACK_DATA: /data
+      MEMSTACK_BIND: 0.0.0.0:8080
+
+volumes:
+  memstack-data:
