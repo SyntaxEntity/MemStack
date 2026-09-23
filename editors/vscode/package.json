@@ -1,0 +1,78 @@
+{
+  "name": "memstack",
+  "displayName": "忆栈 MemStack",
+  "description": "划词造卡：把选中的文字/代码变成忆栈记忆卡",
+  "version": "0.1.0",
+  "publisher": "memstack",
+  "license": "MIT OR Apache-2.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:rust",
+    "onLanguage:python",
+    "onLanguage:go",
+    "onLanguage:typescript",
+    "onLanguage:javascript",
+    "onLanguage:sql",
+    "onCommand:memstack.cardQa",
+    "onCommand:memstack.cardCode",
+    "onCommand:memstack.cardCloze"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "memstack.cardQa",
+        "title": "MemStack: 选区 → 问答卡"
+      },
+      {
+        "command": "memstack.cardCode",
+        "title": "MemStack: 选区 → 代码填空"
+      },
+      {
+        "command": "memstack.cardCloze",
+        "title": "MemStack: 选区 → 填空卡"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "memstack.cardQa",
+        "key": "ctrl+alt+m q",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "memstack.cardCode",
+        "key": "ctrl+alt+m c",
+        "when": "editorHasSelection"
+      },
+      {
+        "command": "memstack.cardCloze",
+        "key": "ctrl+alt+m m",
+        "when": "editorHasSelection"
+      }
+    ],
+    "configuration": {
+      "title": "MemStack",
+      "properties": {
+        "memstack.db": {
+          "type": "string",
+          "default": "",
+          "description": "SQLite 路径。留空用 CLI 默认 memstack.sqlite"
+        },
+        "memstack.defaultDeck": {
+          "type": "string",
+          "default": "收件箱",
+          "description": "默认牌组"
+        },
+        "memstack.bin": {
+          "type": "string",
+          "default": "memstack",
+          "description": "memstack 可执行文件"
+        }
+      }
+    }
+  }
+}
