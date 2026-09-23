@@ -347,7 +347,9 @@ impl App {
             self.params.reviews_per_day
         );
         f.render_widget(
-            Paragraph::new(title).block(Block::default().borders(Borders::ALL).title("牌组")),
+            Paragraph::new(title)
+                .wrap(Wrap { trim: true })
+                .block(Block::default().borders(Borders::ALL).title("状态")),
             chunks[0],
         );
 
@@ -369,7 +371,8 @@ impl App {
         let list = List::new(items)
             .block(Block::default().borders(Borders::ALL).title("牌组 ↑↓ 选择"))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-            .highlight_symbol("▸ ");
+            // ASCII 选中标记，宽度稳定（▸ 在部分终端是模糊宽度）
+            .highlight_symbol("> ");
         f.render_stateful_widget(list, chunks[1], &mut self.deck_state);
 
         let help = if self.status.is_empty() {
@@ -378,7 +381,9 @@ impl App {
             self.status.as_str()
         };
         f.render_widget(
-            Paragraph::new(help).block(Block::default().borders(Borders::ALL)),
+            Paragraph::new(help)
+                .wrap(Wrap { trim: true })
+                .block(Block::default().borders(Borders::ALL)),
             chunks[2],
         );
     }
@@ -399,7 +404,8 @@ impl App {
             .unwrap_or_else(|| "?".into());
         f.render_widget(
             Paragraph::new(format!("{deck_name} — {} 张卡", self.cards.len()))
-                .block(Block::default().borders(Borders::ALL).title("卡片")),
+                .wrap(Wrap { trim: true })
+                .block(Block::default().borders(Borders::ALL).title("状态")),
             chunks[0],
         );
 
@@ -418,7 +424,8 @@ impl App {
                     CardType::Cloze => "填空",
                     CardType::CodeCloze => "代码",
                 };
-                let flag = if c.suspended { "⏸ " } else { "" };
+                // 暂停标记固定占 2 列（CJK 一字 = 2 列）
+                let flag = pad_display(if c.suspended { "停" } else { "" }, 2);
                 let line = format!("{flag}{state} {kind}  {}", one_line(&c.front));
                 ListItem::new(line)
             })
@@ -426,7 +433,7 @@ impl App {
         let list = List::new(items)
             .block(Block::default().borders(Borders::ALL).title("↑↓ 选择"))
             .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-            .highlight_symbol("▸ ");
+            .highlight_symbol("> ");
         f.render_stateful_widget(list, chunks[1], &mut self.card_state);
 
         let help = if self.status.is_empty() {
@@ -435,7 +442,9 @@ impl App {
             self.status.as_str()
         };
         f.render_widget(
-            Paragraph::new(help).block(Block::default().borders(Borders::ALL)),
+            Paragraph::new(help)
+                .wrap(Wrap { trim: true })
+                .block(Block::default().borders(Borders::ALL)),
             chunks[2],
         );
     }
@@ -447,7 +456,7 @@ impl App {
         let popup = centered(area, 80, 70);
         f.render_widget(Clear, popup);
         let text = format!(
-            "[{}]  {}\n\n{}\n\n--------\n\n{}\n\n\n{}",
+            "[{}]  {}\n\n{}\n\n--------\n\n{}",
             match card.card_type {
                 CardType::QuestionAnswer => "问答",
                 CardType::Cloze => "填空",
@@ -459,14 +468,19 @@ impl App {
                 CardState::Review => "复习",
                 CardState::Relearning => "再学习",
             },
-            card.front,
-            card.back,
-            "Esc / q 关闭"
+            card.front.trim_end(),
+            card.back.trim_end(),
         );
         f.render_widget(
             Paragraph::new(text)
-                .wrap(Wrap { trim: true })
-                .block(Block::default().borders(Borders::ALL).title("卡片详情")),
+                // 保留代码缩进，不能 trim
+                .wrap(Wrap { trim: false })
+                .block(
+                    Block::default()
+                        .borders(Borders::ALL)
+                        .title("卡片详情")
+                        .title_bottom(" Esc / q 关闭 "),
+                ),
             popup,
         );
     }
@@ -512,8 +526,9 @@ fn pad_display(s: &str, width: usize) -> String {
 }
 
 fn centered(area: Rect, pct_x: u16, pct_y: u16) -> Rect {
-    let w = area.width * pct_x / 100;
-    let h = area.height * pct_y / 100;
+    // 至少留出边框 + 一行正文，避免矮终端弹层被压没
+    let w = (area.width * pct_x / 100).max(20).min(area.width);
+    let h = (area.height * pct_y / 100).max(5).min(area.height);
     let x = (area.width.saturating_sub(w)) / 2;
     let y = (area.height.saturating_sub(h)) / 2;
     Rect::new(area.x + x, area.y + y, w, h)
@@ -547,6 +562,43 @@ mod tests {
         );
         assert_eq!(pad_display("abcd", 8), "abcd    ");
         assert_eq!(pad_display("abcdefghij", 4), "abcdefghij");
+    }
+
+    #[test]
+    fn card_rows_align_regardless_of_suspend() {
+        use unicode_width::UnicodeWidthStr;
+        let mk = |suspended: bool, front: &str| memstack_core::Card {
+            id: memstack_core::CardId(1),
+            note_id: memstack_core::NoteId(1),
+            deck_id: memstack_core::DeckId(1),
+            card_type: memstack_core::CardType::QuestionAnswer,
+            ordinal: 0,
+            front: front.into(),
+            back: "a".into(),
+            state: memstack_core::CardState::New,
+            step: 0,
+            stability: None,
+            difficulty: None,
+            due: Utc::now(),
+            last_review: None,
+            reps: 0,
+            lapses: 0,
+            suspended,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        let row = |c: &memstack_core::Card| {
+            let flag = pad_display(if c.suspended { "停" } else { "" }, 2);
+            format!("{flag}新   问答  {}", one_line(&c.front))
+        };
+        let a = row(&mk(false, "短"));
+        let b = row(&mk(true, "短"));
+        assert_eq!(a.width(), b.width(), "{a:?} vs {b:?}");
+        let col = |s: &str| {
+            let i = s.find("短").unwrap();
+            s[..i].width()
+        };
+        assert_eq!(col(&a), col(&b), "「短」起始列应相同");
     }
 
     #[test]
