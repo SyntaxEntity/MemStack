@@ -169,13 +169,21 @@ async fn show_card(
         println!();
         println!("{}", card.back);
         println!();
-        println!(
-            "  1=Again {}\t2=Hard {}\t3=Good {}\t4=Easy {}",
-            fmt_in(preview.again.due_in),
-            fmt_in(preview.hard.due_in),
-            fmt_in(preview.good.due_in),
-            fmt_in(preview.easy.due_in),
-        );
+        // 定宽四列，避免 \t / 中英混排把列顶歪
+        let cells = [
+            ("1=Again", fmt_in(preview.again.due_in)),
+            ("2=Hard", fmt_in(preview.hard.due_in)),
+            ("3=Good", fmt_in(preview.good.due_in)),
+            ("4=Easy", fmt_in(preview.easy.due_in)),
+        ];
+        let mut line = String::from("  ");
+        for (label, due) in cells {
+            let col = format!("{label} {due}");
+            let w = unicode_width::UnicodeWidthStr::width(col.as_str());
+            line.push_str(&col);
+            line.push_str(&" ".repeat(18usize.saturating_sub(w)));
+        }
+        println!("{}", line.trim_end());
         println!("{}", term::dim("  u=撤销  q=退出"));
         println!();
 

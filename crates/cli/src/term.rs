@@ -66,7 +66,9 @@ pub fn clear() {
 
 pub fn print_banner(line: &str) {
     println!("\x1b[1m{line}\x1b[0m");
-    println!("{}", "─".repeat(line.chars().count().min(60)));
+    // 下划线按终端列宽，不按字符数（CJK 会占两列）
+    let cols = unicode_width::UnicodeWidthStr::width(line).min(60);
+    println!("{}", "─".repeat(cols));
 }
 
 pub fn dim(s: &str) -> String {

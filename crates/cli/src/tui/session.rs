@@ -26,6 +26,21 @@ pub struct ReviewSession {
 }
 
 impl ReviewSession {
+    /// 测试用：直接用卡片列表建会话。
+    #[cfg(test)]
+    pub fn from_cards_for_test(queue: Vec<memstack_core::Card>) -> Self {
+        Self {
+            queue,
+            flipped: false,
+            undo_stack: Vec::new(),
+            scheduler: Scheduler::new(&DeckParams::default()).unwrap(),
+            deck_id: None,
+            params: DeckParams::default(),
+            reviewed: 0,
+            flash: None,
+        }
+    }
+
     pub async fn start(
         db: &Storage,
         deck_id: Option<memstack_core::DeckId>,
@@ -170,11 +185,12 @@ impl ReviewSession {
             return;
         };
 
+        // 头/底定高，中间吃剩余；Min(0) 比 Min(5) 在矮终端下不会挤歪边框
         let chunks = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Length(3),
-                Constraint::Min(5),
+                Constraint::Min(0),
                 Constraint::Length(3),
             ])
             .split(area);
@@ -200,10 +216,12 @@ impl ReviewSession {
             chunks[0],
         );
 
+        let front = card.front.trim_end();
+        let back = card.back.trim_end();
         let body = if self.flipped {
-            format!("{}\n\n--------\n\n{}", card.front, card.back)
+            format!("{front}\n\n--------\n\n{back}")
         } else {
-            format!("{}\n\n\n[空格显示答案]", card.front)
+            format!("{front}\n\n[空格显示答案]")
         };
         f.render_widget(
             Paragraph::new(body)
@@ -216,9 +234,9 @@ impl ReviewSession {
             Some(msg) => format!("  {msg}"),
             None => {
                 if self.flipped {
-                    "  1=Again  2=Hard  3=Good  4=Easy    u 撤销  q 退出".into()
+                    "  1=Again  2=Hard  3=Good  4=Easy     u 撤销  q 退出".into()
                 } else {
-                    "  空格/Enter 翻面    u 撤销  q 退出".into()
+                    "  空格/Enter 翻面     u 撤销  q 退出".into()
                 }
             }
         };

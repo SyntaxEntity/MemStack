@@ -332,8 +332,8 @@ impl App {
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Length(3),
-                Constraint::Min(3),
-                Constraint::Length(2),
+                Constraint::Min(0),
+                Constraint::Length(3),
             ])
             .split(area);
 
@@ -356,8 +356,8 @@ impl App {
             .iter()
             .map(|d| {
                 let line = format!(
-                    "{:<28}  新 {:>3}  学 {:>3}  复 {:>3}  共 {:>3}",
-                    d.deck.name,
+                    "{}  新 {:>3}  学 {:>3}  复 {:>3}  共 {:>3}",
+                    pad_display(&d.deck.name, 24),
                     d.new,
                     d.learning,
                     d.review,
@@ -388,8 +388,8 @@ impl App {
             .direction(Direction::Vertical)
             .constraints([
                 Constraint::Length(3),
-                Constraint::Min(3),
-                Constraint::Length(2),
+                Constraint::Min(0),
+                Constraint::Length(3),
             ])
             .split(area);
 
@@ -480,11 +480,34 @@ impl App {
 }
 
 fn one_line(s: &str) -> String {
+    use unicode_width::{UnicodeWidthChar, UnicodeWidthStr};
     let t = s.lines().next().unwrap_or("").trim();
-    if t.chars().count() > 40 {
-        t.chars().take(40).collect::<String>() + "…"
+    // 按显示列宽截断，避免中文把行撑歪
+    if t.width() <= 40 {
+        return t.to_string();
+    }
+    let mut out = String::new();
+    let mut w = 0;
+    for ch in t.chars() {
+        let cw = ch.width().unwrap_or(1);
+        if w + cw > 39 {
+            break;
+        }
+        out.push(ch);
+        w += cw;
+    }
+    out.push('…');
+    out
+}
+
+/// 左对齐到指定显示列宽（CJK 记 2 列）。
+fn pad_display(s: &str, width: usize) -> String {
+    use unicode_width::UnicodeWidthStr;
+    let w = s.width();
+    if w >= width {
+        s.to_string()
     } else {
-        t.to_string()
+        format!("{s}{}", " ".repeat(width - w))
     }
 }
 
@@ -507,4 +530,95 @@ pub fn local_day_start(now: chrono::DateTime<Utc>) -> chrono::DateTime<Utc> {
             Utc.with_ymd_and_hms(now.year(), now.month(), now.day(), 0, 0, 0)
                 .unwrap()
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ratatui::backend::TestBackend;
+    use unicode_width::UnicodeWidthStr;
+
+    #[test]
+    fn pad_display_cjk_counts_double() {
+        // 「算法」= 4 列，补到 8 应再跟 4 个空格
+        assert_eq!(
+            pad_display("算法", 8).chars().filter(|c| *c == ' ').count(),
+            4
+        );
+        assert_eq!(pad_display("abcd", 8), "abcd    ");
+        assert_eq!(pad_display("abcdefghij", 4), "abcdefghij");
+    }
+
+    #[test]
+    fn one_line_truncates_by_columns() {
+        let s = "这是一个比较长的中文标题用来测试截断是否按显示列宽";
+        let t = one_line(s);
+        assert!(t.ends_with('…'));
+        assert!(t.width() <= 40);
+    }
+
+    #[test]
+    fn review_frame_borders_do_not_drift() {
+        // 矮终端也应头/底各 3 行，边框等宽
+        let backend = TestBackend::new(40, 12);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        let card = memstack_core::Card {
+            id: memstack_core::CardId(1),
+            note_id: memstack_core::NoteId(1),
+            deck_id: memstack_core::DeckId(1),
+            card_type: memstack_core::CardType::QuestionAnswer,
+            ordinal: 0,
+            front:
+                "什么是{{c1::二分}}？这是一段比较长的正面内容，用来触发换行，检查边框是否还对齐。"
+                    .into(),
+            back: "对半查找\n```rust\nlet m = l + (r-l)/2;\n```".into(),
+            state: memstack_core::CardState::New,
+            step: 0,
+            stability: None,
+            difficulty: None,
+            due: Utc::now(),
+            last_review: None,
+            reps: 0,
+            lapses: 0,
+            suspended: false,
+            created_at: Utc::now(),
+            updated_at: Utc::now(),
+        };
+        let session = session::ReviewSession::from_cards_for_test(vec![card]);
+        terminal.draw(|f| session.draw(f, f.area())).unwrap();
+
+        let buf = terminal.backend().buffer();
+        let area = *buf.area();
+        // 宽字符占两格：跳过续格，统计显示列宽
+        for y in 0..area.height {
+            let mut w = 0usize;
+            let mut x = 0u16;
+            while x < area.width {
+                let s = buf[(x, y)].symbol();
+                if s.is_empty() {
+                    x += 1;
+                    continue;
+                }
+                let cw = unicode_width::UnicodeWidthStr::width(s).max(1);
+                w += cw;
+                x += cw as u16;
+            }
+            assert_eq!(w as u16, area.width, "row {y} width drifted: {w}");
+        }
+        // 顶边框与底边框都是 ──... 且等长
+        let top: String = (0..area.width)
+            .map(|x| buf[(x, 0)].symbol().chars().next().unwrap_or(' '))
+            .collect();
+        let bot: String = (0..area.width)
+            .map(|x| {
+                buf[(x, area.height - 1)]
+                    .symbol()
+                    .chars()
+                    .next()
+                    .unwrap_or(' ')
+            })
+            .collect();
+        assert!(top.starts_with('┌') && top.ends_with('┐'), "top={top:?}");
+        assert!(bot.starts_with('└') && bot.ends_with('┘'), "bot={bot:?}");
+    }
 }
