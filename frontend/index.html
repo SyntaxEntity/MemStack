@@ -16,6 +16,7 @@
         <nav id="deck-list"></nav>
         <footer class="side-foot">
           <button id="btn-review-all">开始复习</button>
+          <button id="btn-stats">统计</button>
         </footer>
       </aside>
       <main id="main">
@@ -95,6 +96,26 @@
         <footer>
           <button id="editor-save" class="primary">保存</button>
         </footer>
+      </div>
+    </div>
+
+    <!-- 统计 -->
+    <div id="stats-overlay" class="overlay hidden">
+      <div class="panel stats">
+        <header>
+          <h3>统计</h3>
+          <button class="ghost" id="stats-close">关闭</button>
+        </header>
+        <div id="stats-summary" class="stats-summary"></div>
+        <section>
+          <h4>复习热力图（近 16 周）</h4>
+          <div id="stats-heatmap" class="heatmap"></div>
+          <p class="muted">浅 <span class="hm-0">·</span><span class="hm-1">·</span><span class="hm-2">·</span><span class="hm-3">·</span><span class="hm-4">·</span> 深</p>
+        </section>
+        <section>
+          <h4>到期预测（近 14 天）</h4>
+          <div id="stats-forecast" class="forecast"></div>
+        </section>
       </div>
     </div>
 

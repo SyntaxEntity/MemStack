@@ -2460,6 +2460,7 @@ dependencies = [
  "memstack-storage",
  "memstack-sync",
  "ratatui",
+ "serde_json",
  "tokio",
 ]
 
@@ -2530,6 +2531,7 @@ version = "0.1.0"
 dependencies = [
  "chrono",
  "memstack-core",
+ "serde",
  "serde_json",
  "sqlx",
  "thiserror 2.0.20",

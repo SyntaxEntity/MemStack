@@ -4,6 +4,7 @@ use std::path::PathBuf;
 mod add;
 mod import;
 mod review;
+mod stats;
 mod sync;
 mod term;
 mod tui;
@@ -47,10 +48,10 @@ enum Command {
         #[arg(long, default_value_t = 20)]
         limit: u32,
     },
-    /// 按状态统计卡片数
+    /// 统计：概况、复习热力图、到期预测
     Stats {
-        #[arg(long)]
-        deck: Option<String>,
+        #[command(flatten)]
+        args: stats::StatsArgs,
     },
     /// 从 Markdown / CSV / Anki 导入。Markdown 可单文件或目录（*.md）。
     Import {
@@ -128,21 +129,7 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
         } => import::run(&db, &path, deck.as_deref(), dry_run).await?,
         Command::Tui => tui::run(&db).await?,
         Command::Sync { cmd } => sync::run(&db, cmd).await?,
-        Command::Stats { deck } => {
-            let deck_id = match deck.as_deref() {
-                Some(name) => db.get_deck_by_name(name).await?.map(|d| d.id),
-                None => None,
-            };
-            if deck.is_some() && deck_id.is_none() {
-                return Err("牌组不存在".into());
-            }
-            let now = chrono::Utc::now();
-            let counts = db.queue_counts(now, deck_id).await?;
-            println!("学习中 {}", counts.learning);
-            println!("新卡   {}", counts.new);
-            println!("待复习 {}", counts.review);
-            println!("合计   {}", counts.total());
-        }
+        Command::Stats { args } => stats::run(&db, &args).await?,
     }
     Ok(())
 }

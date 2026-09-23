@@ -4,8 +4,10 @@
 
 mod codec;
 mod error;
+mod stats;
 
 pub use error::{Error, Result};
+pub use stats::{heat_level, CardCounts, DayCount, DueDay, StatsSummary};
 
 use chrono::{DateTime, Utc};
 use codec::*;
@@ -1383,5 +1385,63 @@ mod tests {
         assert!((got.desired_retention - 0.85).abs() < 1e-6);
         assert_eq!(got.learning_steps, vec![3, 15]);
         assert_eq!(got.fsrs_params.len(), 21);
+    }
+
+    #[tokio::test]
+    async fn stats_heatmap_and_forecast() {
+        let db = Storage::open_in_memory().await.unwrap();
+        let t = now();
+        let deck = db.deck_ensure("统计", t).await.unwrap();
+        let (_, cards) = db
+            .add_note(
+                NewNote {
+                    deck_id: deck.id,
+                    content: NoteContent::QuestionAnswer {
+                        front: "q".into(),
+                        back: "a".into(),
+                    },
+                    tags: BTreeSet::new(),
+                    source: None,
+                },
+                t,
+            )
+            .await
+            .unwrap();
+        let mut c = cards[0].clone();
+        c.state = CardState::Review;
+        c.reps = 1;
+        c.due = t + chrono::Duration::days(3);
+        let log = ReviewLog {
+            id: None,
+            card_id: c.id,
+            reviewed_at: t,
+            rating: Rating::Good,
+            state_before: CardState::New,
+            step_before: 0,
+            stability_before: None,
+            difficulty_before: None,
+            interval_days: 3.0,
+            elapsed_days: 0,
+            duration_ms: 1,
+        };
+        db.save_review(&c, &log).await.unwrap();
+
+        let summary = db.stats_summary(t).await.unwrap();
+        assert_eq!(summary.decks, 1);
+        assert_eq!(summary.cards, 1);
+        assert_eq!(summary.total_reviews, 1);
+        assert_eq!(summary.reviews_30d, 1);
+        assert!(summary.accuracy_30d.unwrap() > 0.9);
+        assert_eq!(summary.streak_days, 1);
+
+        let heat = db.review_heatmap(t, 14).await.unwrap();
+        assert_eq!(heat.len(), 14);
+        assert_eq!(heat.last().unwrap().count, 1);
+        assert_eq!(heat_level(heat.last().unwrap().count), 1);
+
+        let forecast = db.due_forecast(t, 10).await.unwrap();
+        assert_eq!(forecast.len(), 10);
+        // 第 3 天到期（today + 3）
+        assert_eq!(forecast[3].due, 1);
     }
 }

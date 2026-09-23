@@ -61,6 +61,7 @@ fn main() {
             commands::flip_card,
             commands::review_done,
             commands::queue_summary,
+            commands::stats_panel,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

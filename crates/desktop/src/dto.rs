@@ -110,6 +110,38 @@ pub struct ReviewDoneDto {
     pub review_cap: u32,
 }
 
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StatsDto {
+    pub decks: u64,
+    pub notes: u64,
+    pub cards: u64,
+    pub new: u64,
+    pub learning: u64,
+    pub review: u64,
+    pub due_now: u64,
+    pub total_reviews: u64,
+    pub reviews_30d: u64,
+    pub accuracy_30d: Option<f32>,
+    pub streak_days: u32,
+    pub heatmap: Vec<HeatDayDto>,
+    pub forecast: Vec<ForecastDayDto>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HeatDayDto {
+    pub date: String,
+    pub count: u64,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ForecastDayDto {
+    pub date: String,
+    pub due: u64,
+}
+
 pub fn card_type_str(t: CardType) -> &'static str {
     match t {
         CardType::QuestionAnswer => "qa",

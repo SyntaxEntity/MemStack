@@ -8,7 +8,8 @@ use tokio::sync::Mutex;
 
 use crate::dto::{
     card_dto, content_to_form, note_dto, parse_note_input, tags_from, CardDto, DeckDto,
-    NoteDetailDto, NoteDto, NoteInput, ReviewCardDto, ReviewDoneDto,
+    ForecastDayDto, HeatDayDto, NoteDetailDto, NoteDto, NoteInput, ReviewCardDto, ReviewDoneDto,
+    StatsDto,
 };
 use crate::error::Result;
 use crate::session::{self, ReviewSession};
@@ -240,6 +241,45 @@ pub async fn queue_summary(db: State<'_, Db>, deck_id: Option<i64>) -> Result<De
         learning: counts.learning,
         new: counts.new,
         review: counts.review,
+    })
+}
+
+#[tauri::command]
+pub async fn stats_panel(db: State<'_, Db>) -> Result<StatsDto> {
+    stats_panel_impl(&db.0).await
+}
+
+pub async fn stats_panel_impl(db: &Storage) -> Result<StatsDto> {
+    let now = Utc::now();
+    let s = db.stats_summary(now).await?;
+    let heatmap = db.review_heatmap(now, 112).await?;
+    let forecast = db.due_forecast(now, 14).await?;
+    Ok(StatsDto {
+        decks: s.decks,
+        notes: s.notes,
+        cards: s.cards,
+        new: s.counts.new,
+        learning: s.counts.learning + s.counts.relearning,
+        review: s.counts.review,
+        due_now: s.due_now,
+        total_reviews: s.total_reviews,
+        reviews_30d: s.reviews_30d,
+        accuracy_30d: s.accuracy_30d,
+        streak_days: s.streak_days,
+        heatmap: heatmap
+            .into_iter()
+            .map(|d| HeatDayDto {
+                date: d.date,
+                count: d.count,
+            })
+            .collect(),
+        forecast: forecast
+            .into_iter()
+            .map(|d| ForecastDayDto {
+                date: d.date,
+                due: d.due,
+            })
+            .collect(),
     })
 }
 

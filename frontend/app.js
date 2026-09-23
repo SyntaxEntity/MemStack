@@ -330,6 +330,66 @@ async function quitReview() {
   if (state.selectedDeckId != null) await selectDeck(state.selectedDeckId);
 }
 
+// ---------- 统计 ----------
+
+async function openStats() {
+  try {
+    const s = await invoke("stats_panel");
+    renderStats(s);
+    $("stats-overlay").classList.remove("hidden");
+  } catch (e) {
+    console.error(e);
+    alert("统计加载失败：" + e);
+  }
+}
+
+function renderStats(s) {
+  const acc =
+    s.accuracy30d == null ? "—" : Math.round(s.accuracy30d * 100) + "%";
+  $("stats-summary").innerHTML = `
+    <div class="cell"><b>${s.decks}</b><span>牌组</span></div>
+    <div class="cell"><b>${s.notes}</b><span>笔记</span></div>
+    <div class="cell"><b>${s.cards}</b><span>卡片</span></div>
+    <div class="cell"><b>${s.dueNow}</b><span>待复习</span></div>
+    <div class="cell"><b>${s.new} · ${s.learning}</b><span>新卡 · 学习中</span></div>
+    <div class="cell"><b>${s.reviews30d}</b><span>近 30 天复习</span></div>
+    <div class="cell"><b>${acc}</b><span>近 30 天正确率</span></div>
+    <div class="cell"><b>${s.streakDays}</b><span>连续天数</span></div>
+  `;
+
+  const heat = $("stats-heatmap");
+  heat.innerHTML = "";
+  for (const day of s.heatmap) {
+    const lvl = heatLevel(day.count);
+    const el = document.createElement("i");
+    el.className = "hm-" + lvl;
+    el.title = `${day.date} · ${day.count} 次`;
+    heat.appendChild(el);
+  }
+
+  const fc = $("stats-forecast");
+  fc.innerHTML = "";
+  const max = Math.max(1, ...s.forecast.map((d) => d.due));
+  for (const day of s.forecast) {
+    const col = document.createElement("div");
+    col.className = "col";
+    const h = Math.max(2, Math.round((day.due / max) * 100));
+    col.innerHTML = `<span class="val">${day.due}</span>
+      <div class="bar" style="height:${h}%"></div>
+      <span class="lab">${day.date.slice(5)}</span>`;
+    col.title = `${day.date} · ${day.due} 张到期`;
+    fc.appendChild(col);
+  }
+}
+
+function heatLevel(n) {
+  if (n <= 0) return 0;
+  if (n <= 4) return 1;
+  if (n <= 14) return 2;
+  if (n <= 34) return 3;
+  return 4;
+}
+
 // ---------- 事件 ----------
 
 function bind() {
@@ -341,6 +401,8 @@ function bind() {
   }
   $("btn-review-all").onclick = () => startReview(null);
   $("btn-review-deck").onclick = () => startReview(state.selectedDeckId);
+  $("btn-stats").onclick = openStats;
+  $("stats-close").onclick = () => $("stats-overlay").classList.add("hidden");
   $("review-quit").onclick = quitReview;
   $("review-done-close").onclick = quitReview;
 
