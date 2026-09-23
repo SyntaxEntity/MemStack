@@ -1,4 +1,4 @@
-//! 卡片导入：Markdown 文件/目录，或 Anki `.apkg`。
+//! 卡片导入：Markdown 文件/目录、CSV，或 Anki `.apkg`。
 
 use chrono::Utc;
 use memstack_core::{Card, CardState, CardType, NoteContent, Rating, ReviewLog};
@@ -12,15 +12,29 @@ pub async fn run(
     deck_override: Option<&str>,
     dry_run: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let is_apkg = path
+    let ext = path
         .extension()
         .and_then(|e| e.to_str())
-        .is_some_and(|e| e.eq_ignore_ascii_case("apkg") || e.eq_ignore_ascii_case("colpkg"));
+        .map(|e| e.to_ascii_lowercase())
+        .unwrap_or_default();
 
-    if is_apkg {
-        return run_apkg(db, path, deck_override, dry_run).await;
+    match ext.as_str() {
+        "apkg" | "colpkg" => return run_apkg(db, path, deck_override, dry_run).await,
+        "csv" | "tsv" => return run_csv(db, path, deck_override, dry_run).await,
+        _ => {}
     }
     run_markdown(db, path, deck_override, dry_run).await
+}
+
+async fn run_csv(
+    db: &Storage,
+    path: &Path,
+    deck_override: Option<&str>,
+    dry_run: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path_str = path.to_string_lossy();
+    let drafts = memstack_import::import_csv_file(&path_str, deck_override)?;
+    ingest_drafts(db, drafts, dry_run).await
 }
 
 async fn run_markdown(
@@ -35,7 +49,14 @@ async fn run_markdown(
     } else {
         memstack_import::import_markdown_file(&path_str, deck_override)?
     };
+    ingest_drafts(db, drafts, dry_run).await
+}
 
+async fn ingest_drafts(
+    db: &Storage,
+    drafts: Vec<memstack_import::NoteDraft>,
+    dry_run: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
     if drafts.is_empty() {
         println!("没有解析到卡片。");
         return Ok(());

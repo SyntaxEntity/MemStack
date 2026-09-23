@@ -13,6 +13,12 @@ pub enum Error {
     #[error("第 {index} 张卡：牌组未指定（frontmatter 写 deck:，或用 --deck）")]
     MissingDeck { index: usize },
 
+    #[error("CSV 第 {index} 行：{reason}")]
+    BadCsvRow { index: usize, reason: String },
+
+    #[error("CSV 解析失败：{0}")]
+    Csv(#[from] csv::Error),
+
     #[error("核心层错误")]
     Core(#[from] memstack_core::Error),
 

@@ -9,7 +9,7 @@
 - **三种题型**：问答、填空（`{{c1::答案}}`）、代码填空（挖洞补全，和标准答案对照）
 - **FSRS 调度**：Anki 同源算法，参数可看可调，复习记录完整落库
 - **键盘复习**：空格翻面，`1-4` 评分，`u` 撤销，每日新卡/复习上限
-- **导入**：Markdown 批量卡片、Anki `.apkg`（牌组、标签、挖空、调度历史）
+- **导入**：Markdown 批量卡片、CSV、Anki `.apkg`（牌组、标签、挖空、调度历史）
 - **存储**：单文件 SQLite，放进坚果云 / WebDAV / Syncthing 就能多端同步
 - **终端优先**：CLI + TUI（ratatui），桌面壳在计划里
 
@@ -73,9 +73,10 @@ memstack add --deck 地理 cloze --text "首都是{{c1::北京}}，是{{c2::政�
 # 代码填空
 memstack add --deck 算法 code --language rust --code "let m = l + ({{c1::r - l}}) / 2;"
 
-# 从 Markdown / Anki 导入
+# 从 Markdown / CSV / Anki 导入
 memstack import ./cards/ --dry-run
 memstack import ./cards/
+memstack import cards.csv
 memstack import 部.apkg
 
 # 浏览（牌组 → 卡片 → 复习）
@@ -120,11 +121,23 @@ language: rust
 - 也认 `正面：` / `背面：` 标注写法
 - 目录导入时递归 `*.md`，子目录名作默认牌组
 
+### CSV 格式
+
+```csv
+front,back,tags,deck
+什么是二分？,有序数组上对半查找,"leetcode,二分",算法
+```
+
+- 有表头时列名认 `front/back/text/code/type/deck/tags/language/extra`（也认中文列名）
+- 无表头按 `正面,背面[,标签]`（Anki 习惯）
+- 题型自动：`code` 列 → 代码填空；`text`/`front` 含 `{{c1::` → 填空；否则问答
+- `.tsv` 用制表符分隔。`--deck` 覆盖行内 `deck`
+
 ## 命令一览
 
 ```text
 memstack add       造卡（qa / cloze / code）
-memstack import    导入 Markdown 文件、目录或 .apkg
+memstack import    导入 Markdown / CSV / .apkg
 memstack tui       交互浏览与复习
 memstack review    纯键盘复习（脚本 / 远程友好）
 memstack decks     列出牌组
@@ -148,7 +161,7 @@ cargo fmt --all -- --check
 crates/core       领域模型、FSRS 调度，不碰 IO
 crates/storage    SQLite 与迁移
 crates/markdown   渲染
-crates/import     Markdown / apkg 导入
+crates/import     Markdown / CSV / apkg 导入
 crates/cli        CLI + TUI
 crates/desktop    Tauri 壳（骨架）
 crates/server     同步服务（骨架，AGPLv3，见其 README）

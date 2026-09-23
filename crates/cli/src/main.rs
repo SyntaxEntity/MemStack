@@ -51,11 +51,11 @@ enum Command {
         #[arg(long)]
         deck: Option<String>,
     },
-    /// 从 Markdown 导入：单文件或目录（*.md）。`***` 切多张卡。
+    /// 从 Markdown / CSV / Anki 导入。Markdown 可单文件或目录（*.md）。
     Import {
-        /// .md 文件、目录，或 .apkg
+        /// .md 文件、目录、.csv，或 .apkg
         path: PathBuf,
-        /// 覆盖 frontmatter 里的 deck
+        /// 覆盖文件里的 deck
         #[arg(long)]
         deck: Option<String>,
         /// 干跑，只打印将导入的内容

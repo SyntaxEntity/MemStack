@@ -1,4 +1,4 @@
-//! 卡片导入：Markdown 文件夹、Anki `.apkg`。
+//! 卡片导入：Markdown 文件夹、CSV、Anki `.apkg`。
 //!
 //! Markdown 格式（见 docs/方案.md）：
 //!
@@ -27,16 +27,18 @@
 //! - 也兼容 `正面：` / `背面：` 标注写法
 
 pub mod anki;
+mod csv;
 mod error;
 mod parse;
 
 use std::path::Path;
 
 pub use anki::{parse_apkg, AnkiImport, ImportedCard, ImportedNote, ImportedReview};
+pub use csv::{import_csv_file, parse_csv_cards, parse_csv_cards_with_delim};
 pub use error::{Error, Result};
 pub use parse::{parse_markdown_cards, NoteDraft, ParsedFile};
 
-/// 从文件读入并解析。`default_deck` 覆盖 frontmatter 里的 deck。
+/// 从 Markdown 文件读入并解析。`default_deck` 覆盖 frontmatter 里的 deck。
 pub fn import_markdown_file(path: &str, default_deck: Option<&str>) -> Result<Vec<NoteDraft>> {
     let text = std::fs::read_to_string(path).map_err(|source| Error::Io {
         path: path.to_string(),

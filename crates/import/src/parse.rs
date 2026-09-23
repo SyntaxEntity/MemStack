@@ -31,7 +31,7 @@ struct Meta {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Kind {
+pub(crate) enum Kind {
     Qa,
     Cloze,
     Code,
@@ -141,7 +141,7 @@ fn parse_meta(text: &str) -> Result<Meta> {
     Ok(meta)
 }
 
-fn parse_kind(value: &str) -> Option<Kind> {
+pub(crate) fn parse_kind(value: &str) -> Option<Kind> {
     match value.trim().to_ascii_lowercase().as_str() {
         "qa" | "basic" | "问答" => Some(Kind::Qa),
         "cloze" | "填空" => Some(Kind::Cloze),
@@ -150,7 +150,7 @@ fn parse_kind(value: &str) -> Option<Kind> {
     }
 }
 
-fn parse_tags(value: &str) -> BTreeSet<String> {
+pub(crate) fn parse_tags(value: &str) -> BTreeSet<String> {
     let value = value.trim();
     let inner = value
         .strip_prefix('[')
@@ -159,6 +159,22 @@ fn parse_tags(value: &str) -> BTreeSet<String> {
     inner
         .split([',', '、'])
         .map(|s| unquote(s.trim()).to_string())
+        .filter(|s| !s.is_empty())
+        .collect()
+}
+
+/// CSV 标签：逗号 / 顿号 / 空白都可分隔（兼容 Anki 导出）。
+pub(crate) fn parse_csv_tags(value: &str) -> BTreeSet<String> {
+    value
+        .trim()
+        .split([',', '、', ' ', '\t'])
+        .map(|s| {
+            s.trim()
+                .trim_matches('"')
+                .trim_matches('\'')
+                .trim()
+                .to_string()
+        })
         .filter(|s| !s.is_empty())
         .collect()
 }
