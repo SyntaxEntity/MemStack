@@ -8,7 +8,7 @@ lazy.nvim：
 
 ```lua
 {
-  dir = "~/Projects/memstack/editors/nvim",  -- 或克隆本仓库后的路径
+  dir = "~/Projects/MemStack/editors/nvim",  -- 或克隆本仓库后的路径
   config = function()
     require("memstack").setup({
       -- db = vim.fn.expand("~/memstack.sqlite"),
