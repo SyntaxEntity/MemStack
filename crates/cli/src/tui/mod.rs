@@ -4,8 +4,12 @@ use chrono::{Datelike, TimeZone, Utc};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 use memstack_core::{Card, CardState, CardType, Deck, DeckParams};
 use memstack_storage::{DailyUsage, Storage};
+use ratatui::layout::Margin;
 use ratatui::prelude::*;
-use ratatui::widgets::{Block, Borders, Clear, List, ListItem, ListState, Paragraph, Wrap};
+use ratatui::widgets::{
+    Block, Borders, Clear, List, ListItem, ListState, Paragraph, Scrollbar, ScrollbarOrientation,
+    ScrollbarState, Wrap,
+};
 use std::io;
 
 mod session;
@@ -368,12 +372,7 @@ impl App {
                 ListItem::new(line)
             })
             .collect();
-        let list = List::new(items)
-            .block(Block::default().borders(Borders::ALL).title("牌组 ↑↓ 选择"))
-            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-            // ASCII 选中标记，宽度稳定（▸ 在部分终端是模糊宽度）
-            .highlight_symbol("> ");
-        f.render_stateful_widget(list, chunks[1], &mut self.deck_state);
+        render_list(f, chunks[1], items, &mut self.deck_state, "牌组 ↑↓ 选择");
 
         let help = if self.status.is_empty() {
             "Enter 打开  r 复习  g 刷新  q 退出"
@@ -430,11 +429,7 @@ impl App {
                 ListItem::new(line)
             })
             .collect();
-        let list = List::new(items)
-            .block(Block::default().borders(Borders::ALL).title("↑↓ 选择"))
-            .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
-            .highlight_symbol("> ");
-        f.render_stateful_widget(list, chunks[1], &mut self.card_state);
+        render_list(f, chunks[1], items, &mut self.card_state, "↑↓ 选择");
 
         let help = if self.status.is_empty() {
             "Enter 详情  r 复习本牌组  Esc 返回"
@@ -512,6 +507,52 @@ fn one_line(s: &str) -> String {
     }
     out.push('…');
     out
+}
+
+/// 列表 + 滚动指示：标题位 `↑ 当前/总数 ↓`，右侧 scrollbar。
+fn render_list(
+    f: &mut Frame,
+    area: Rect,
+    items: Vec<ListItem>,
+    state: &mut ListState,
+    title: &str,
+) {
+    let total = items.len();
+    let sel = state.selected().unwrap_or(0).min(total.saturating_sub(1));
+    if total > 0 {
+        state.select(Some(sel));
+    }
+    let up = if sel > 0 { "↑" } else { " " };
+    let down = if total > 0 && sel + 1 < total {
+        "↓"
+    } else {
+        " "
+    };
+    let counter = if total == 0 {
+        "0/0".to_string()
+    } else {
+        format!("{}/{}", sel + 1, total)
+    };
+    let title = format!("{title}   {up} {counter} {down}");
+
+    let list = List::new(items)
+        .block(Block::default().borders(Borders::ALL).title(title))
+        .highlight_style(Style::default().add_modifier(Modifier::REVERSED))
+        .highlight_symbol("> ");
+    f.render_stateful_widget(list, area, state);
+
+    if total > 1 && area.height > 2 {
+        let bar = area.inner(Margin {
+            vertical: 1,
+            horizontal: 0,
+        });
+        let mut sb = ScrollbarState::new(total).position(sel);
+        f.render_stateful_widget(
+            Scrollbar::new(ScrollbarOrientation::VerticalRight),
+            bar,
+            &mut sb,
+        );
+    }
 }
 
 /// 左对齐到指定显示列宽（CJK 记 2 列）。
@@ -672,5 +713,24 @@ mod tests {
             .collect();
         assert!(top.starts_with('┌') && top.ends_with('┐'), "top={top:?}");
         assert!(bot.starts_with('└') && bot.ends_with('┘'), "bot={bot:?}");
+    }
+
+    #[test]
+    fn list_shows_position_and_scroll_hint() {
+        let backend = TestBackend::new(30, 10);
+        let mut terminal = ratatui::Terminal::new(backend).unwrap();
+        let items: Vec<ListItem> = (0..20).map(|i| ListItem::new(format!("row {i}"))).collect();
+        let mut state = ListState::default();
+        state.select(Some(5));
+        terminal
+            .draw(|f| render_list(f, f.area(), items, &mut state, "列表"))
+            .unwrap();
+        let buf = terminal.backend().buffer();
+        let top: String = (0..30)
+            .map(|x| buf[(x, 0)].symbol().chars().next().unwrap_or(' '))
+            .collect();
+        // 标题含当前位置 6/20 与上下箭头
+        assert!(top.contains("6/20"), "title={top:?}");
+        assert!(top.contains('↑') && top.contains('↓'), "title={top:?}");
     }
 }
