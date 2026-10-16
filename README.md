@@ -1,6 +1,10 @@
 # 忆栈 MemStack
 
+![DeepSeek Assisted Development](https://img.shields.io/badge/DeepSeek%20Assisted-Development-brightgreen?style=for-the-badge&logo=deepseek)
+
 开源间隔重复记忆卡。Markdown 是卡片本体，代码块、表格原生支持。FSRS 调度，数据在你自己手里。
+
+**许可证**：客户端（core / storage / markdown / import / cli / desktop / sync）为 **MIT OR Apache-2.0**，任选其一；仅同步服务 `server` 为 **AGPL-3.0-only**。根目录 `LICENSE` 为 MIT 全文。详见[许可证](#许可证)。
 
 - 仓库：<https://github.com/SyntaxEntity/MemStack>
 - 设计说明：[docs/方案.md](docs/方案.md)
@@ -231,4 +235,11 @@ cargo fmt --all -- --check
 | core / storage / markdown / import / cli / desktop / sync | **MIT OR Apache-2.0**（任选） |
 | server | **AGPL-3.0-only** |
 
-正文见 `LICENSE-MIT`、`LICENSE-APACHE`、`LICENSE-AGPL`。自托管同步与 AGPL 义务见 [crates/server/README.md](crates/server/README.md)。
+根目录 `LICENSE` 为面向用户的主许可（MIT）全文；`LICENSE-APACHE`、`LICENSE-AGPL` 对应其余部分；`LICENSE-MIT` 与 `LICENSE` 正文一致，保留以对应 SPDX 标识。自托管同步与 AGPL 义务见 [crates/server/README.md](crates/server/README.md)。
+
+## DeepSeek Assisted Development
+
+![DeepSeek Assisted Development](https://img.shields.io/badge/DeepSeek%20Assisted-Development-brightgreen?style=for-the-badge&logo=deepseek)
+
+本仓库代码由 **DeepSeek** 辅助编写（vibecoding）。AI 生成的代码可能包含缺陷、过时用法或不完整实现，
+请自行评估后使用与集成。
