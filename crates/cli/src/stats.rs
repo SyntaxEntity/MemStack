@@ -99,7 +99,7 @@ fn print_heatmap(days: &[memstack_storage::DayCount]) {
             print!(" ");
         }
     }
-    if (days.len() as u32 + shift) % 7 != 0 {
+    if !(days.len() as u32 + shift).is_multiple_of(7) {
         println!();
     }
     println!("       浅 ·░▒▓█ 深");
