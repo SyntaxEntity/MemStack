@@ -50,7 +50,7 @@
 
 ## 3. 架构
 
-Rust workspace（resolver 2，edition 2021，rust-version 1.85）：
+Rust workspace（resolver 2，edition 2021，rust-version 1.94）：
 
 ```text
 crates/core       领域模型、FSRS、挖空、模板 —— 不碰 IO、不依赖 GUI

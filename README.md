@@ -1,6 +1,8 @@
 # 忆栈 MemStack
 
-![Rust](https://img.shields.io/badge/Rust-1.85%2B-000000?style=flat-square&logo=rust) ![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue?style=flat-square) ![DeepSeek Assisted Development](https://img.shields.io/badge/DeepSeek%20Assisted-Development-brightgreen?style=for-the-badge&logo=deepseek)
+![Rust](https://img.shields.io/badge/Rust-1.94%2B-blue?style=for-the-badge&logo=rust)
+![license](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue?style=for-the-badge)
+![DeepSeek Assisted Development](https://img.shields.io/badge/DeepSeek%20Assisted-Development-brightgreen?style=for-the-badge&logo=deepseek)
 
 开源间隔重复记忆卡（SRS），面向程序员：背算法模板、命令、SQL、设计模式。Markdown 即卡片本体，代码块与表格原生支持；FSRS 调度，数据存单文件 SQLite。
 
@@ -43,7 +45,7 @@
 
 | 项 | 要求 |
 |---|---|
-| Rust | 1.85+（[rustup](https://rustup.rs)） |
+| Rust | 1.94+（[rustup](https://rustup.rs)） |
 | CLI / TUI | 无额外系统库（SQLite 静态链接） |
 | 桌面端 | Linux 需 `webkit2gtk4.1` 等 Tauri 2 依赖 |
 | 同步服务 | Docker / Podman，或本机 Rust 编译 |
@@ -238,7 +240,7 @@ docs/             方案
 
 ## 技术栈
 
-Rust workspace（edition 2021，rust-version 1.85）；调度 [fsrs](https://crates.io/crates/fsrs) 6.6；存储 SQLite + sqlx / rusqlite；Markdown pulldown-cmark；TUI ratatui；桌面 Tauri 2；同步 axum。
+Rust workspace（edition 2021，rust-version 1.94）；调度 [fsrs](https://crates.io/crates/fsrs) 6.6；存储 SQLite + sqlx / rusqlite；Markdown pulldown-cmark；TUI ratatui；桌面 Tauri 2；同步 axum。
 
 ## 已知限制
 
