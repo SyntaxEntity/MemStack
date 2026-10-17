@@ -1,14 +1,11 @@
 # 忆栈 MemStack
 
-![DeepSeek Assisted Development](https://img.shields.io/badge/DeepSeek%20Assisted-Development-brightgreen?style=for-the-badge&logo=deepseek)
+![Rust](https://img.shields.io/badge/Rust-1.85%2B-000000?style=flat-square&logo=rust) ![License](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue?style=flat-square) ![DeepSeek Assisted Development](https://img.shields.io/badge/DeepSeek%20Assisted-Development-brightgreen?style=for-the-badge&logo=deepseek)
 
-开源间隔重复记忆卡。Markdown 是卡片本体，代码块、表格原生支持。FSRS 调度，数据在你自己手里。
+开源间隔重复记忆卡（SRS），面向程序员：背算法模板、命令、SQL、设计模式。Markdown 即卡片本体，代码块与表格原生支持；FSRS 调度，数据存单文件 SQLite。
 
-**许可证**：客户端（core / storage / markdown / import / cli / desktop / sync）为 **MIT OR Apache-2.0**，任选其一；仅同步服务 `server` 为 **AGPL-3.0-only**。根目录 `LICENSE` 为 MIT 全文。详见[许可证](#许可证)。
-
-- 仓库：<https://github.com/SyntaxEntity/MemStack>
-- 设计说明：[docs/方案.md](docs/方案.md)
-- 版本记录：[CHANGELOG.md](CHANGELOG.md)
+> 版本 `0.1.0` ｜ 状态：开发中（v0.1 功能已成型，方案第三版未开始） ｜ 已知限制见 [已知限制](#已知限制)
+> 许可证：客户端 MIT OR Apache-2.0 ｜ 仅 `server` 为 AGPL-3.0-only（详见 [许可证](#许可证)）
 
 ## 功能
 
@@ -16,19 +13,19 @@
 
 - 三种题型：问答、填空（`{{c1::答案}}`）、代码填空（挖洞补全，与标准答案对照）
 - 卡片模板：概念 / 命令 / 算法 / SQL / 填空 / 踩坑复盘
-- FSRS 调度（与 Anki 同源），参数可看可调，复习记录完整落库
+- FSRS 调度（与 Anki 同源），复习记录完整落库
 - 键盘复习：空格翻面，`1-4` 评分，`u` 撤销，每日新卡 / 复习上限
-- 牌组、标签、搜索、暂停 / 归档
+- 牌组、标签
 
 **界面**
 
 - CLI + TUI（ratatui）：终端造卡、浏览、复习
-- 桌面端（Tauri 2）：浏览 / 新建 / 编辑 / 跑测 / 统计
+- 桌面端（Tauri 2）：浏览 / 新建 / 编辑 / 复习 / 统计
 - 划词造卡：Neovim、VSCode 选中即成卡
 
 **数据**
 
-- 单文件 SQLite，备份 = 拷走文件；导出不设限；`review_logs` 只增不改
+- 单文件 SQLite，备份 = 拷走文件；数据无锁定，任何 SQLite 工具均可读写；`review_logs` 只增不改
 - 导入：Markdown 批量、CSV / TSV、Anki `.apkg`（牌组、标签、挖空、调度历史）
 - 同步服务：账号、增量 push / pull、冲突合并；也可用坚果云 / Syncthing 直接同步库文件
 
@@ -37,16 +34,18 @@
 - 概况、近 30 天正确率、连续天数
 - 复习热力图、到期预测曲线（CLI + 桌面）
 
-## 依赖
+## 安装
+
+三种形态按需安装：CLI 只需 Rust 工具链，桌面端另需系统库，同步服务可用容器。
+
+### 依赖
 
 | 项 | 要求 |
 |---|---|
 | Rust | 1.85+（[rustup](https://rustup.rs)） |
 | CLI / TUI | 无额外系统库（SQLite 静态链接） |
 | 桌面端 | Linux 需 `webkit2gtk4.1` 等 Tauri 2 依赖 |
-| 同步服务 | Docker，或本机 Rust 编译 |
-
-## 安装
+| 同步服务 | Docker / Podman，或本机 Rust 编译 |
 
 ### CLI
 
@@ -81,15 +80,7 @@ podman run -d -p 8080:8080 -v memstack-data:/data memstack-server
 
 部署与 AGPL 义务见 [crates/server/README.md](crates/server/README.md)。
 
-## 数据位置
-
-| 场景 | 路径 |
-|---|---|
-| 默认库 | 当前目录 `memstack.sqlite`（各命令均认 `--db <路径>`） |
-| 桌面端默认 | `~/.memstack/memstack.db` |
-| 覆盖 | 环境变量 `MEMSTACK_DB` |
-
-## 快速上手
+## 使用
 
 ```bash
 # 造卡
@@ -113,7 +104,7 @@ memstack stats
 memstack stats --json --forecast-days 30
 
 # 同步（自托管）
-memstack sync register --url http://127.0.0.1:8080 --username you --password ...
+memstack sync register --url http://127.0.0.1:8080 --username you --password 'your-password'
 memstack sync run
 ```
 
@@ -137,13 +128,15 @@ memstack sync run
 
 ## 卡片格式
 
+三种输入格式：Markdown 单文件 / 目录、CSV / TSV、编辑器 JSON。导入时自动识别题型。
+
 ### Markdown
 
 ```markdown
 ---
 deck: 算法
 tags: [leetcode, 二分]
-type: qa | cloze | code   # 可省，自动识别
+type: qa            # 可省，自动识别：qa / cloze / code
 language: rust
 ---
 
@@ -155,7 +148,7 @@ language: rust
 
 ***
 
-第二张卡……
+第二张卡（格式同上）
 ```
 
 - 文件级 frontmatter 写在最前；`***` 单独成行 = 下一张卡
@@ -178,7 +171,7 @@ front,back,tags,deck
 ### 编辑器 JSON
 
 ```bash
-echo '{"kind":"qa","front":"…","back":"…"}' | memstack add-json --deck 收件箱 -
+echo '{"kind":"qa","front":"二分左边界？","back":"区间 [l,r) 收敛"}' | memstack add-json --deck 收件箱 -
 ```
 
 `kind`：`qa` / `cloze` / `code`。字段与桌面端一致。
@@ -198,7 +191,27 @@ memstack sync        register / login / status / push / pull / run
 memstack --help      全部参数
 ```
 
-## 架构
+## 配置
+
+数据文件位置：
+
+| 场景 | 路径 |
+|---|---|
+| CLI / TUI 默认 | 当前目录 `memstack.sqlite`（各命令均认 `--db <路径>`） |
+| 桌面端默认 | `~/.memstack/memstack.db` |
+| 环境变量覆盖 | `MEMSTACK_DB` |
+
+## 构建（开发）
+
+```bash
+cargo test --workspace
+cargo clippy --workspace --all-targets -- -D warnings
+cargo fmt --all -- --check
+```
+
+推代码前跑上面三条；CI 相同（[.github/workflows/ci.yml](.github/workflows/ci.yml)）。镜像发布见 [.github/workflows/docker.yml](.github/workflows/docker.yml)。
+
+## 项目结构
 
 ```text
 crates/core       领域模型、FSRS、挖空、卡片模板（不碰 IO）
@@ -216,17 +229,38 @@ Dockerfile        同步服务镜像（compose.yaml）
 docs/             方案
 ```
 
-技术栈：Rust workspace；调度 [fsrs](https://crates.io/crates/fsrs)；存储 SQLite + sqlx / rusqlite；Markdown pulldown-cmark；TUI ratatui；桌面 Tauri 2；同步 axum。
+## 技术栈
 
-## 开发
+Rust workspace（edition 2021，rust-version 1.85）；调度 [fsrs](https://crates.io/crates/fsrs) 6.6；存储 SQLite + sqlx / rusqlite；Markdown pulldown-cmark；TUI ratatui；桌面 Tauri 2；同步 axum。
 
-```bash
-cargo test --workspace
-cargo clippy --workspace --all-targets -- -D warnings
-cargo fmt --all -- --check
-```
+## 已知限制
 
-推代码前跑上面三条；CI 相同（[.github/workflows/ci.yml](.github/workflows/ci.yml)）。镜像发布见 [docker.yml](.github/workflows/docker.yml)。
+- **本地验证环境**：开发与手工验证仅在 Fedora 44（Wayland）上进行，其他 Linux 发行版未验证。
+- **CI 覆盖范围**：ubuntu / macos / windows 三平台跑 fmt + clippy + test + CLI smoke（见 [ci.yml](.github/workflows/ci.yml)）；**桌面端只在 CI 中编译，未在三平台实际运行验证**。
+- **未产出安装包**：`tauri.conf.json` 中 `bundle.active: false`，桌面端只能源码运行；图标仅 32×32 `icon.png`，正式打包需补完整尺寸套图。
+- **无 Release**：仓库有 `v0.1.0` tag，但未创建 GitHub Release，也未提供预编译二进制，只能从源码构建。
+- **导出缺口**：尚无内置导出命令（CLI 无 `export` 子命令，桌面端无导出按钮）。当前导出方式是直接用 SQLite 工具读取库文件，或复制 `*.sqlite`。
+- **搜索与标签浏览缺口**：无全文搜索；标签可写入与导入，但暂无按标签筛选或浏览的界面。
+- **暂停 / 归档缺口**：数据库有 `suspended` 字段并在 TUI 中显示，但**没有界面可以切换**；「归档」未实现。
+- **FSRS 参数不可调**：目标留存率、最大间隔、每日上限等存于 `deck_params` 表，但**暂无 CLI / 桌面界面查看或修改**，实际使用内置默认值（每日新卡 20 / 复习 200）。复习记录完整落库，可自行导出复算。
+- **徽章图片**：依赖 shields.io，离线环境不显示。
+
+## 路线图
+
+- **已完成**：v0.1.0 —— 造卡三题型、模板、FSRS 复习、CLI + TUI、桌面端、Markdown / CSV / apkg 导入、同步服务、统计、编辑器划词造卡。
+- **近期**：补齐导出功能（CLI 子命令 + 桌面入口），消除[已知限制](#已知限制)中的导出缺口。
+- **方案第三版（未开始）**：移动端、社区牌组、插件系统 —— 见 [docs/方案.md](docs/方案.md)。
+- **明确不做**：桌面端改用 egui 的备选路线（富文本与公式排版弱），当前走 Tauri 2 + webview。
+
+## 项目文档
+
+| 文档 | 内容 |
+|---|---|
+| [docs/方案.md](docs/方案.md) | 设计叙事与版本规划 |
+| [PROJECT.md](PROJECT.md) | 项目现状、设计约束、已知偏差与协作约定 |
+| [AGENTS.md](AGENTS.md) | AI / 自动化协作者的上手契约 |
+| [CHANGELOG.md](CHANGELOG.md) | 版本能力清单 |
+| [crates/server/README.md](crates/server/README.md) | 同步服务部署与 AGPL 义务 |
 
 ## 许可证
 
