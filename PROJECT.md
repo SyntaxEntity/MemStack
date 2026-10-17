@@ -35,7 +35,7 @@
 | 版本 | **v0.1.0**，tag 指向 `af80b56` |
 | `master` | 领先 tag `v0.1.0` **18 个提交**（8 功能/CI + 6 文档/许可证 + 2 README/SSH + 2 导出功能与文档） |
 | 远程 | `git@github.com:SyntaxEntity/MemStack.git`（SSH；public，默认分支 `master`） |
-| 同步 | `origin/master` = `153bfbe`（已推到 2026-10-17 文档批）；导出功能提交尚未推送 |
+| 同步 | `origin/master` = 本地 `master`（含导出功能），已推送 |
 | 贡献者 | 全部提交为 `SyntaxEntity <265272538+SyntaxEntity@users.noreply.github.com>` |
 | CI | `CI`（fmt + 三平台 clippy/test/smoke）与 `docker`（GHCR 发布）**最近运行均 success** |
 | 测试 | **82 项全绿**：core 24 / import 25 / storage 8 / server 5 / cli 15 / sync 3 / desktop 2 |
