@@ -2,6 +2,7 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 mod add;
+mod export;
 mod import;
 mod review;
 mod stats;
@@ -83,6 +84,18 @@ enum Command {
         #[arg(long)]
         dry_run: bool,
     },
+    /// 导出：JSON 全量（含调度与复习记录）/ Markdown（可再导入）
+    Export {
+        /// 只导出指定牌组
+        #[arg(long)]
+        deck: Option<String>,
+        /// 输出格式：json（无损全量）/ md（可再导入）
+        #[arg(long, value_enum, default_value_t = export::Format::Json)]
+        format: export::Format,
+        /// 输出路径。JSON 省略则写 stdout；Markdown 省略则写 ./memstack-export
+        #[arg(long)]
+        out: Option<PathBuf>,
+    },
     /// 交互浏览：牌组 → 卡片列表 → 复习
     Tui,
     /// 同步：register / login / status / push / pull / run
@@ -158,6 +171,9 @@ async fn run() -> Result<(), Box<dyn std::error::Error>> {
             deck,
             dry_run,
         } => import::run(&db, &path, deck.as_deref(), dry_run).await?,
+        Command::Export { deck, format, out } => {
+            export::run(&db, deck.as_deref(), format, out.as_deref()).await?
+        }
         Command::Tui => tui::run(&db).await?,
         Command::Sync { cmd } => sync::run(&db, cmd).await?,
         Command::Stats { args } => stats::run(&db, &args).await?,
