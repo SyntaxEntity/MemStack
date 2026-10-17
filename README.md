@@ -26,6 +26,7 @@
 **数据**
 
 - 单文件 SQLite，备份 = 拷走文件；数据无锁定，任何 SQLite 工具均可读写；`review_logs` 只增不改
+- 导出：JSON 全量（牌组参数、卡片调度状态、复习记录，可离线复算 FSRS）/ Markdown（每张笔记一个文件，可再导入）
 - 导入：Markdown 批量、CSV / TSV、Anki `.apkg`（牌组、标签、挖空、调度历史）
 - 同步服务：账号、增量 push / pull、冲突合并；也可用坚果云 / Syncthing 直接同步库文件
 
@@ -96,6 +97,11 @@ memstack add --deck 算法 --template algo-pattern
 memstack import ./cards/ --dry-run
 memstack import cards.csv
 memstack import 牌组.apkg
+
+# 导出
+memstack export --format json --out backup.json
+memstack export --format md --out ./cards
+memstack export --deck 算法 --format json
 
 # 复习 / 统计
 memstack review --deck 算法
@@ -183,6 +189,7 @@ memstack add         造卡（qa / cloze / code，或 --template）
 memstack add-json    JSON 造卡（编辑器集成，path=- 读 stdin）
 memstack templates   列出 / 查看造卡模板
 memstack import      导入 Markdown / CSV / .apkg
+memstack export      导出 JSON 全量 / Markdown（可再导入）
 memstack tui         交互浏览与复习
 memstack review      纯键盘复习
 memstack decks       列出牌组
@@ -239,7 +246,7 @@ Rust workspace（edition 2021，rust-version 1.85）；调度 [fsrs](https://cra
 - **CI 覆盖范围**：ubuntu / macos / windows 三平台跑 fmt + clippy + test + CLI smoke（见 [ci.yml](.github/workflows/ci.yml)）；**桌面端只在 CI 中编译，未在三平台实际运行验证**。
 - **未产出安装包**：`tauri.conf.json` 中 `bundle.active: false`，桌面端只能源码运行；图标仅 32×32 `icon.png`，正式打包需补完整尺寸套图。
 - **无 Release**：仓库有 `v0.1.0` tag，但未创建 GitHub Release，也未提供预编译二进制，只能从源码构建。
-- **导出缺口**：尚无内置导出命令（CLI 无 `export` 子命令，桌面端无导出按钮）。当前导出方式是直接用 SQLite 工具读取库文件，或复制 `*.sqlite`。
+- **导出入口只在 CLI**：`memstack export` 提供 JSON 全量（含调度状态与复习记录）与 Markdown（可再导入）；**桌面端尚无导出按钮**。
 - **搜索与标签浏览缺口**：无全文搜索；标签可写入与导入，但暂无按标签筛选或浏览的界面。
 - **暂停 / 归档缺口**：数据库有 `suspended` 字段并在 TUI 中显示，但**没有界面可以切换**；「归档」未实现。
 - **FSRS 参数不可调**：目标留存率、最大间隔、每日上限等存于 `deck_params` 表，但**暂无 CLI / 桌面界面查看或修改**，实际使用内置默认值（每日新卡 20 / 复习 200）。复习记录完整落库，可自行导出复算。
@@ -248,7 +255,8 @@ Rust workspace（edition 2021，rust-version 1.85）；调度 [fsrs](https://cra
 ## 路线图
 
 - **已完成**：v0.1.0 —— 造卡三题型、模板、FSRS 复习、CLI + TUI、桌面端、Markdown / CSV / apkg 导入、同步服务、统计、编辑器划词造卡。
-- **近期**：补齐导出功能（CLI 子命令 + 桌面入口），消除[已知限制](#已知限制)中的导出缺口。
+- **已完成（未发版）**：`memstack export` —— JSON 全量（可复算 FSRS）/ Markdown（可再导入）。
+- **下一步**：桌面端导出入口；补齐[已知限制](#已知限制)中剩余的功能缺口。
 - **方案第三版（未开始）**：移动端、社区牌组、插件系统 —— 见 [docs/方案.md](docs/方案.md)。
 - **明确不做**：桌面端改用 egui 的备选路线（富文本与公式排版弱），当前走 Tauri 2 + webview。
 

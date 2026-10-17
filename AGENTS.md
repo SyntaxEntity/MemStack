@@ -3,6 +3,10 @@
 > 项目根 = 仓库根 = `~/Projects/MemStack`。
 > **工作区统一规范（红线）见 `~/Projects/Atlas/prompts/PROMPT-00-workspace-norms.md` 与 `~/Projects/Atlas/CONVENTIONS.md`，本文件只补项目特有的部分。**
 
+> **⚠️ 每轮开工先读 `~/Projects/Atlas/brief.md`** —— 那是 Atlas 的当前轮次派发单，
+> 读完这一个文件就知道本轮该做什么、不该做什么。没有你的任务就回报「无新增任务」，
+> **不要自行找活干**。派发单里的任务**幂等**：已完成就核对并跳过，不要重做。
+
 ---
 
 ## 0. 30 秒认知
@@ -23,33 +27,30 @@
 
 ## 1. 🔴 待 Atlas / 用户决策的遗留问题
 
-### 1.1 许可证被 GitHub 误识别为 AGPL-3.0（D3）—— 本地已修，待推送复核
+### 1.1 许可证误识别（D3）—— 已修复并验证
 
-根目录三份 LICENSE 中 GitHub 自动选中了 AGPL，但**客户端实为 MIT OR Apache-2.0**。这会让只想集成客户端的开发者顾虑"传染性"而放弃。
+根目录三份 LICENSE 中 GitHub 曾自动选中 AGPL，但**客户端实为 MIT OR Apache-2.0**。这会让只想集成客户端的开发者顾虑"传染性"而放弃。
 
-**已按规范 §7 处置**：根目录 `LICENSE` = MIT 全文（主许可），保留 `LICENSE-AGPL` / `LICENSE-APACHE` / `LICENSE-MIT`，README 顶部加显著分许可边界说明。
-`gh repo view --json licenseInfo` **只在推送后才更新**，故该复核项仍待推送后进行。
+**已按规范 §7 处置并推送验证**：根目录 `LICENSE` = MIT 全文（主许可），保留 `LICENSE-AGPL` / `LICENSE-APACHE` / `LICENSE-MIT`，README 顶部有分许可边界说明。
+复核结果：`gh repo view SyntaxEntity/MemStack --json licenseInfo` → `mit`。
 
-### 1.2 无 Release，`master` 领先 tag 8 个提交（D4）
+### 1.2 无 Release（D4）
 
-tag 存在但未建 Release，用户拿不到二进制。且用户在 v0.1.0 上仍会遇到 CI 修复前的 Tauri 依赖问题。
+tag `v0.1.0` 存在但未建 Release，用户拿不到预编译二进制，只能源码构建。
 **版本节奏由 Atlas / 用户定，项目 agent 不自行决定。**
 
-### 1.3 仓库元信息（D2）
+### 1.3 仓库元信息（D2）—— 已处置
 
-description 陈旧偏题：`[Vibe] MemStack - 忆栈记忆卡：支持添加和显示代码块的类Anki记忆卡`
-→ 去掉 `[Vibe]` 前缀（规范 §4.4）、去掉与差异化叙事冲突的「类 Anki」自述，并补 topics / homepage。
+原 description 为 `[Vibe] MemStack - …类Anki记忆卡`，已按规范 §4.4 改写（去 `[Vibe]`、去「类 Anki」），并补 11 个 topics。`homepage` 仍为空——项目暂无官网。
 
-### 1.4 产品级缺口：「导出永不设限」无落地功能（D7）
+### 1.4 导出功能（原 D7）—— CLI 已落地
 
-这是**对外承诺与实现之间的实质缺口**，不是猜测：CLI `--help` 无 `export` 子命令；桌面端 20 余个 `tauri::command` 中无导出命令；全仓 `export` 仅以 `memstack_sync::export_items` 存在（同步协议内部函数）。
-
-底层数据导出能力已具备，缺的是 CLI 入口 + 桌面入口（建议至少 Markdown / JSON + `review_logs` 全量，以便用户复算 FSRS）。**成本低、收益高、与核心理念一致。**
+`memstack export --format json|md` 已实现：JSON 含牌组参数 / 卡片调度状态 / `review_logs` 全量，可离线复算 FSRS；Markdown 每张笔记一个文件，可被 `memstack import` 再读入。**桌面端仍无导出入口。**
 
 ### 1.5 其他
 
 - `gh` token 缺 `workflow` / `read:packages` scope → 需用户补。
-- `master` 无分支保护、无 topics / homepage。
+- `master` 无分支保护（待 Atlas 定协作模型）。
 - 24 个提交曾被改写并 force push（既成事实）。**后续不再建议做此类操作**；确需改写先报 Atlas。
 - GHCR 镜像已推送，但 token 缺 `read:packages`，无法核实包可见性。
 
@@ -58,7 +59,7 @@ description 陈旧偏题：`[Vibe] MemStack - 忆栈记忆卡：支持添加和�
 ## 2. 构建与验证
 
 ```bash
-cargo test --workspace                                    # 应为 72 passed / 0 failed
+cargo test --workspace                                    # 应为 82 passed / 0 failed
 cargo clippy --workspace --all-targets -- -D warnings
 cargo fmt --all -- --check
 
@@ -68,6 +69,7 @@ git ls-remote origin && git status -sb
 # CLI 端到端 smoke
 cargo run -q --bin memstack -- --help
 cargo run -q --bin memstack -- --db smoke.sqlite add --deck 算法 qa --front f --back b
+cargo run -q --bin memstack -- --db smoke.sqlite export --format json | head -5
 ```
 
 ---

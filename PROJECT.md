@@ -33,12 +33,12 @@
 | 项 | 状态 |
 |---|---|
 | 版本 | **v0.1.0**，tag 指向 `af80b56` |
-| `master` | 领先 tag `v0.1.0` **14 个提交**（8 个功能 / CI 修复 + 6 个文档 / 许可证 / 披露） |
+| `master` | 领先 tag `v0.1.0` **18 个提交**（8 功能/CI + 6 文档/许可证 + 2 README/SSH + 2 导出功能与文档） |
 | 远程 | `git@github.com:SyntaxEntity/MemStack.git`（SSH；public，默认分支 `master`） |
-| 同步 | `origin/master` = `bd6b7b4`；本地另有文档 / 许可证类提交未推送 |
-| 贡献者 | 24 个提交全部为 `SyntaxEntity <265272538+SyntaxEntity@users.noreply.github.com>` |
+| 同步 | `origin/master` = `153bfbe`（已推到 2026-10-17 文档批）；导出功能提交尚未推送 |
+| 贡献者 | 全部提交为 `SyntaxEntity <265272538+SyntaxEntity@users.noreply.github.com>` |
 | CI | `CI`（fmt + 三平台 clippy/test/smoke）与 `docker`（GHCR 发布）**最近运行均 success** |
-| 测试 | **72 项全绿**：core 24 / import 25 / storage 8 / server 5 / cli 5 / sync 3 / desktop 2 |
+| 测试 | **82 项全绿**：core 24 / import 25 / storage 8 / server 5 / cli 15 / sync 3 / desktop 2 |
 | 规模 | 约 10.5k 行 Rust（8 个 crate） |
 | GitHub Release | **无**（tag 已推，但未建 Release） |
 
@@ -144,23 +144,28 @@ cargo install --path crates/cli    # → ~/.cargo/bin/memstack
 
 按重要性排序。**这些都是核对出的实证问题，不是猜测。**
 
-**本轮（2026-10-17）已处置**：① README 加 DeepSeek 辅助编写披露（顶徽章 + 底段落）② 许可证布局按规范 §7 修正（见 6.2）③ `.gitignore` 收敛内部协作产物黑名单段 ④ 确认 SSH 故障已消失，作废绕行写法（见 6.7）。
+**本轮（2026-10-17）已处置**：① README 加 DeepSeek 辅助编写披露 ② 许可证布局按规范 §7 修正并验证为 MIT ③ `.gitignore` 收敛内部协作产物黑名单段 ④ SSH 故障确认消失，作废绕行写法 ⑤ README 按 18 节骨架重排，补 `## 已知限制` ⑥ **新增 `memstack export`（JSON / Markdown）**，补齐「导出永不设限」的 CLI 落地。
 
-### 6.1 导出功能尚未产品化（最高优先）
+### 6.1 导出功能：CLI 已落地，桌面端仍缺
 
-约定 3「导出永不设限」目前**没有面向用户的落地路径**：
+约定 3「导出永不设限」原先没有面向用户的落地路径，**2026-10-17 已在 CLI 侧补齐**：
 
-- CLI `--help` 无 `export` 子命令
-- 桌面端 20 余个 `tauri::command` 中无导出命令
-- 全仓 `export` 仅以 `memstack_sync::export_items` 存在，是同步协议内部函数
+- `memstack export --format json`：牌组参数 + 卡片调度状态 + `review_logs` 全量，可离线复算 FSRS
+- `memstack export --format md`：每张笔记一个文件，可被 `memstack import` 再读入
+- `--deck` 过滤；JSON 省略 `--out` 时写 stdout
 
-底层能力已在，缺的是 CLI `export` + 桌面入口（至少 Markdown/JSON + `review_logs` 全量）。这是对外承诺与实现之间的缺口。
+**仍缺**：桌面端导出入口（20 余个 `tauri::command` 中仍无导出命令）。
 
-### 6.2 GitHub 许可证识别为 AGPL-3.0（本地已修，待推送复核）
+### 6.2 许可证识别（已修复并验证）
 
 GitHub `licenseInfo` 曾返回 `agpl-3.0`——根目录三份 LICENSE 中它被自动识别选中。实际是**按 crate 分许可**：仅 `server` 为 AGPL-3.0-only，其余为 MIT OR Apache-2.0。
 
-**已按工作区规范 §7 处置**：根目录新增 `LICENSE`（MIT 全文，面向用户的主许可），`LICENSE-APACHE` / `LICENSE-AGPL` 保留，README 顶部加显著的分许可边界说明。GitHub 只按**已推送**内容计算识别结果，故 `gh repo view --json licenseInfo` 需在推送后复核。
+**已按工作区规范 §7 处置并验证**：根目录新增 `LICENSE`（MIT 全文，面向用户的主许可），`LICENSE-APACHE` / `LICENSE-AGPL` 保留，README 顶部加显著的分许可边界说明。推送后复核：
+
+```text
+$ gh repo view SyntaxEntity/MemStack --json licenseInfo
+{"licenseInfo":{"key":"mit","name":"MIT License","nickname":""}}
+```
 
 ### 6.3 无 GitHub Release
 
@@ -203,9 +208,9 @@ Bad owner or permissions on /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf
 
 工程侧优先级建议（与第 6 节对应）：
 
-1. **导出产品化**（6.1）——核心承诺，成本低
+1. ~~导出产品化（6.1）~~ —— CLI 已落地（JSON / Markdown）；剩桌面端入口
 2. 补 `v0.1.1` tag + GitHub Release（6.3 / 6.4）
-3. ~~许可证展示修正（6.2）~~ —— 本地已修，推送后复核 `licenseInfo`
+3. ~~许可证展示修正（6.2）~~ —— 已完成，已验证 GitHub 识别为 MIT
 4. ~~`docs/方案.md` 对齐实现（6.5）~~ —— 已完成
 5. 正式打包所需的图标套图（6.6）
 
