@@ -11,7 +11,7 @@
 
 | 项 | 值 |
 |---|---|
-| 分支 / 远端 | `master` ← GitHub `SyntaxEntity/MemStack`（SSH；完整地址见 `git remote -v`） |
+| 分支 / 远端 | `master` ← `git@github.com:SyntaxEntity/MemStack.git`（SSH） |
 | 版本 | v0.1.0（tag `af80b56`） |
 | 技术栈 | Rust 2021 · SQLite + sqlx/rusqlite · pulldown-cmark · ratatui · Tauri 2 · axum · fsrs 6.6.2 |
 | 许可证 | **按 crate 分**：客户端 (core/storage/markdown/import/cli/desktop/sync) = MIT OR Apache-2.0；仅 `server` = AGPL-3.0-only |
