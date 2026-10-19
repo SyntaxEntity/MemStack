@@ -1,0 +1,211 @@
+# 从 tag 构建并上传发布产物。
+#
+# 设计要点：
+# - **tag 是唯一事实源**：构建前先校验 tag 与 Cargo.toml 版本一致，不一致直接失败。
+#   手工上传产物曾导致「tag 与二进制不同源」，本 workflow 让该问题不再出现。
+# - 支持 workflow_dispatch + dry_run：可在不动既有 Release 的前提下验证流水线。
+# - 产物命名用 target triple，避免「linux-x86_64」这类含糊后缀。
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要重建产物的 tag（如 v0.2.0）"
+        required: true
+        type: string
+      dry_run:
+        description: "只构建不上传（验证流水线用）"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  meta:
+    name: 版本校验
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      ref: ${{ steps.v.outputs.ref }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - id: v
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -n "${{ inputs.tag }}" ]; then TAG="${{ inputs.tag }}"; else TAG="${GITHUB_REF_NAME}"; fi
+          case "$TAG" in
+            v*) ;;
+            *) echo "::error::tag 必须形如 v1.2.3，实际为 $TAG"; exit 1 ;;
+          esac
+          VER="${TAG#v}"
+          MANIFEST_VER="$(grep -m1 -E '^version = ' Cargo.toml | sed -E 's/.*"(.*)".*/\1/')"
+          echo "tag 版本 = $VER"
+          echo "Cargo.toml = $MANIFEST_VER"
+          if [ "$VER" != "$MANIFEST_VER" ]; then
+            echo "::error::tag 与 Cargo.toml 版本不一致（$VER vs $MANIFEST_VER）——拒绝发布，先修版本号"
+            exit 1
+          fi
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+          echo "ref=$TAG" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: ${{ matrix.target }}
+    needs: meta
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04,  target: x86_64-unknown-linux-gnu,  ext: "" }
+          - { os: macos-latest,  target: aarch64-apple-darwin,     ext: "" }
+          - { os: macos-latest,  target: x86_64-apple-darwin,      ext: "" }
+          - { os: windows-latest, target: x86_64-pc-windows-msvc,  ext: ".exe" }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.meta.outputs.ref }}
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Build（仅 CLI 与 server，不含 Tauri 桌面端）
+        shell: bash
+        run: cargo build --release --locked --target "${{ matrix.target }}" -p memstack-cli -p memstack-server
+
+      - name: Package
+        shell: bash
+        env:
+          V: ${{ needs.meta.outputs.version }}
+          TAG: ${{ needs.meta.outputs.ref }}
+        run: |
+          set -euo pipefail
+          T="${{ matrix.target }}"
+          E="${{ matrix.ext }}"
+          SRC="target/${T}/release"
+          mkdir -p dist
+
+          # 平台备注：Linux 额外记录实测的 glibc 下限
+          NOTE="适用平台     : ${T}"
+          if [ "${RUNNER_OS}" = "Linux" ]; then
+            CL="$(objdump -T "${SRC}/memstack" | grep -oP 'GLIBC_[0-9.]+' | sort -uV | tail -1)"
+            SV="$(objdump -T "${SRC}/memstack-server" | grep -oP 'GLIBC_[0-9.]+' | sort -uV | tail -1)"
+            NOTE="${NOTE}
+          最低 glibc   : memstack ${CL} / memstack-server ${SV}"
+          fi
+
+          stage() { # $1=包内名 $2=二进制名
+            local d="stage/$1"
+            mkdir -p "$d"
+            cp "${SRC}/$2${E}" "$d/"
+            cp README.md LICENSE "$d/"
+            printf '%s v%s — %s\n\n构建自 tag   : %s\n工具链       : %s\n构建环境     : %s\n%s\n\n动态链接系统库；无法运行时请从源码构建：\n  cargo install --path crates/cli\n' \
+              "$1" "$V" "$T" "$TAG" "$(cargo --version)" "${RUNNER_OS} / ${T}" "$NOTE" \
+              > "$d/BUILD-INFO.txt"
+          }
+
+          stage "memstack"        "memstack"
+          stage "memstack-server" "memstack-server"
+
+          if [ "${RUNNER_OS}" = "Windows" ]; then
+            7z a -tzip "dist/memstack-v${V}-${T}.zip"        ./stage/memstack/*       > /dev/null
+            7z a -tzip "dist/memstack-server-v${V}-${T}.zip" ./stage/memstack-server/* > /dev/null
+          else
+            tar -czf "dist/memstack-v${V}-${T}.tar.gz"        -C stage/memstack .
+            tar -czf "dist/memstack-server-v${V}-${T}.tar.gz" -C stage/memstack-server .
+          fi
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bin-${{ matrix.target }}
+          path: dist/*
+          if-no-files-found: error
+
+  vsix:
+    name: vscode 扩展
+    needs: meta
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.meta.outputs.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: vsce package
+        shell: bash
+        run: |
+          set -euo pipefail
+          V="${{ needs.meta.outputs.version }}"
+          MANIFEST_VER="$(node -p "require('./editors/vscode/package.json').version")"
+          if [ "$V" != "$MANIFEST_VER" ]; then
+            echo "::error::扩展版本 $MANIFEST_VER 与 tag $V 不一致"
+            exit 1
+          fi
+          mkdir -p dist
+          cd editors/vscode
+          npx --yes @vscode/vsce package --out "../../dist/memstack-${V}.vsix"
+          cd ../..
+          ls -lh dist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vsix
+          path: dist/*
+          if-no-files-found: error
+
+  publish:
+    name: 上传到 Release
+    needs: [meta, build, vsix]
+    if: ${{ !inputs.dry_run }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.meta.outputs.ref }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: 生成 SHA256SUMS
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd dist
+          sha256sum * > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: 上传
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="${{ needs.meta.outputs.ref }}"
+          # Release 不存在则创建；已存在则只补资产
+          if ! gh release view "$TAG" > /dev/null 2>&1; then
+            gh release create "$TAG" --title "$TAG" --notes "产物由 CI 从该 tag 构建。详见 README 的已知限制。"
+          fi
+          gh release upload "$TAG" dist/* --clobber
+          gh release view "$TAG" --json assets -q '.assets[] | "\(.name)\t\(.size) B"'
