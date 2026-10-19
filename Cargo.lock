@@ -2450,7 +2450,7 @@ dependencies = [
 
 [[package]]
 name = "memstack-cli"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "clap",
@@ -2468,7 +2468,7 @@ dependencies = [
 
 [[package]]
 name = "memstack-core"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "fsrs",
@@ -2478,7 +2478,7 @@ dependencies = [
 
 [[package]]
 name = "memstack-desktop"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "memstack-core",
@@ -2492,7 +2492,7 @@ dependencies = [
 
 [[package]]
 name = "memstack-import"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "csv",
@@ -2505,11 +2505,11 @@ dependencies = [
 
 [[package]]
 name = "memstack-markdown"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "memstack-server"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "argon2",
  "axum",
@@ -2529,7 +2529,7 @@ dependencies = [
 
 [[package]]
 name = "memstack-storage"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "memstack-core",
@@ -2542,7 +2542,7 @@ dependencies = [
 
 [[package]]
 name = "memstack-sync"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "memstack-core",

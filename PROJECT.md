@@ -32,17 +32,17 @@
 
 | 项 | 状态 |
 |---|---|
-| 版本 | **v0.1.0**，tag 指向 `af80b56` |
-| `master` | 领先 tag `v0.1.0` **18 个提交**（8 功能/CI + 6 文档/许可证 + 2 README/SSH + 2 导出功能与文档） |
+| 版本 | **v0.2.0**（tag `v0.2.0`）；上一版 v0.1.0 = `af80b56` |
+| `master` | 领先 `v0.1.0` tag **19 个提交**（8 功能/CI + 6 文档/许可证 + 2 README/SSH + 2 导出 + 1 CI MSRV） |
 | 远程 | `git@github.com:SyntaxEntity/MemStack.git`（SSH；public，默认分支 `master`） |
-| 同步 | `origin/master` = 本地 `master`（含导出功能），已推送 |
+| 同步 | `origin/master` = 本地 `master`，已推送 |
 | 贡献者 | 全部提交为 `SyntaxEntity <265272538+SyntaxEntity@users.noreply.github.com>` |
-| CI | `CI`（fmt + 三平台 clippy/test/smoke）与 `docker`（GHCR 发布）**最近运行均 success** |
+| CI | `CI`（fmt + 三平台 clippy/test/smoke + **MSRV 1.94 钉住 job**）与 `docker`（GHCR 发布）**最近运行均 success** |
 | 测试 | **82 项全绿**：core 24 / import 25 / storage 8 / server 5 / cli 15 / sync 3 / desktop 2 |
 | 规模 | 约 10.5k 行 Rust（8 个 crate） |
-| GitHub Release | **无**（tag 已推，但未建 Release） |
+| GitHub Release | **v0.2.0**（已建，未附预编译产物） |
 
-**v0.1.0 范围已全部落地**（见 [CHANGELOG.md](CHANGELOG.md)）：造卡三题型、模板、FSRS 复习、CLI + TUI、桌面端、MD/CSV/apkg 导入、同步服务、统计、nvim / vscode 划词造卡。
+**v0.2.0 范围**（见 [CHANGELOG.md](CHANGELOG.md)）：在 v0.1.0 全部能力之上新增 `memstack export`（JSON 全量可复算 FSRS / Markdown 可再导入）。
 
 [docs/方案.md](docs/方案.md) 的**第三版**（移动端、社区牌组、插件系统）未开始。
 
@@ -167,13 +167,13 @@ $ gh repo view SyntaxEntity/MemStack --json licenseInfo
 {"licenseInfo":{"key":"mit","name":"MIT License","nickname":""}}
 ```
 
-### 6.3 无 GitHub Release
+### 6.3 ~~无 GitHub Release~~（v0.2.0 已建）
 
-tag `v0.1.0` 已推送到远程，但未创建 Release。对外分发（尤其是 CLI 二进制）缺少落点。
+`v0.2.0` 已创建 GitHub Release。**未附预编译产物**——CLI 仍需 `cargo install --path crates/cli`，桌面端需源码运行。
 
-### 6.4 版本落后于 `master`
+### 6.4 ~~版本落后于 `master`~~（随 v0.2.0 闭环）
 
-tag `v0.1.0` = `af80b56`，`master` 已领先 8 个提交（含 CI 修复）。这些修补未进入任何版本号，需决定是否补 tag（如 v0.1.1）。
+v0.1.0 之后积压的全部改动（CI 修复、导出功能、文档与许可证修正、MSRV 提升）已并入 `v0.2.0`。
 
 ### 6.5 `docs/方案.md` 与技术栈不符
 
@@ -235,4 +235,4 @@ Bad owner or permissions on /etc/ssh/ssh_config.d/20-systemd-ssh-proxy.conf
 
 ## 9. 一句话现状
 
-> **v0.1.0 已完整交付并托管于 GitHub（SyntaxEntity/MemStack），CI 绿、作者已归一、72 项测试全绿。代码结构清晰、约束明确。下一步是方案第三版（移动 / 社区 / 插件），或先补上「导出产品化」这个对外承诺的缺口。动手前先跑 `cargo test --workspace` 确认环境。**
+> **v0.2.0 已发布并托管于 GitHub（SyntaxEntity/MemStack），CI 绿、作者已归一、82 项测试全绿。代码结构清晰、约束明确。下一步是方案第三版（移动 / 社区 / 插件），或补上「桌面端导出入口」等已知缺口。动手前先跑 `cargo test --workspace` 确认环境。**

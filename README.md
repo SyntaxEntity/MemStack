@@ -6,7 +6,7 @@
 
 开源间隔重复记忆卡（SRS），面向程序员：背算法模板、命令、SQL、设计模式。Markdown 即卡片本体，代码块与表格原生支持；FSRS 调度，数据存单文件 SQLite。
 
-> 版本 `0.1.0` ｜ 状态：开发中（v0.1 功能已成型，方案第三版未开始） ｜ 已知限制见 [已知限制](#已知限制)
+> 版本 `0.2.0` ｜ 状态：开发中（v0.2 已发布，方案第三版未开始） ｜ 已知限制见 [已知限制](#已知限制)
 > 许可证：客户端 MIT OR Apache-2.0 ｜ 仅 `server` 为 AGPL-3.0-only（详见 [许可证](#许可证)）
 
 ## 功能
@@ -247,7 +247,7 @@ Rust workspace（edition 2021，rust-version 1.94）；调度 [fsrs](https://cra
 - **本地验证环境**：开发与手工验证仅在 Fedora 44（Wayland）上进行，其他 Linux 发行版未验证。
 - **CI 覆盖范围**：ubuntu / macos / windows 三平台跑 fmt + clippy + test + CLI smoke（见 [ci.yml](.github/workflows/ci.yml)）；**桌面端只在 CI 中编译，未在三平台实际运行验证**。
 - **未产出安装包**：`tauri.conf.json` 中 `bundle.active: false`，桌面端只能源码运行；图标仅 32×32 `icon.png`，正式打包需补完整尺寸套图。
-- **无 Release**：仓库有 `v0.1.0` tag，但未创建 GitHub Release，也未提供预编译二进制，只能从源码构建。
+- **无预编译二进制**：`v0.2.0` 已创建 GitHub Release，但**未附预构建产物**，只能从源码构建（`cargo install --path crates/cli`）。
 - **导出入口只在 CLI**：`memstack export` 提供 JSON 全量（含调度状态与复习记录）与 Markdown（可再导入）；**桌面端尚无导出按钮**。
 - **搜索与标签浏览缺口**：无全文搜索；标签可写入与导入，但暂无按标签筛选或浏览的界面。
 - **暂停 / 归档缺口**：数据库有 `suspended` 字段并在 TUI 中显示，但**没有界面可以切换**；「归档」未实现。
@@ -257,7 +257,7 @@ Rust workspace（edition 2021，rust-version 1.94）；调度 [fsrs](https://cra
 ## 路线图
 
 - **已完成**：v0.1.0 —— 造卡三题型、模板、FSRS 复习、CLI + TUI、桌面端、Markdown / CSV / apkg 导入、同步服务、统计、编辑器划词造卡。
-- **已完成（未发版）**：`memstack export` —— JSON 全量（可复算 FSRS）/ Markdown（可再导入）。
+- **已完成**：v0.2.0 —— `memstack export`（JSON 全量可复算 FSRS / Markdown 可再导入）。
 - **下一步**：桌面端导出入口；补齐[已知限制](#已知限制)中剩余的功能缺口。
 - **方案第三版（未开始）**：移动端、社区牌组、插件系统 —— 见 [docs/方案.md](docs/方案.md)。
 - **明确不做**：桌面端改用 egui 的备选路线（富文本与公式排版弱），当前走 Tauri 2 + webview。

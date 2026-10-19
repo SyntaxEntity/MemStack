@@ -16,7 +16,7 @@
 | 项 | 值 |
 |---|---|
 | 分支 / 远端 | `master` ← `git@github.com:SyntaxEntity/MemStack.git`（SSH） |
-| 版本 | v0.1.0（tag `af80b56`） |
+| 版本 | v0.2.0（tag `v0.2.0`；上一版 v0.1.0 = `af80b56`） |
 | 技术栈 | Rust 2021 · SQLite + sqlx/rusqlite · pulldown-cmark · ratatui · Tauri 2 · axum · fsrs 6.6.2 |
 | 许可证 | **按 crate 分**：客户端 (core/storage/markdown/import/cli/desktop/sync) = MIT OR Apache-2.0；仅 `server` = AGPL-3.0-only |
 | 文档 | `PROJECT.md`（现状与约定）· `docs/方案.md` · 旧 `HANDOFF.md` 已删除 |
@@ -34,10 +34,10 @@
 **已按规范 §7 处置并推送验证**：根目录 `LICENSE` = MIT 全文（主许可），保留 `LICENSE-AGPL` / `LICENSE-APACHE` / `LICENSE-MIT`，README 顶部有分许可边界说明。
 复核结果：`gh repo view SyntaxEntity/MemStack --json licenseInfo` → `mit`。
 
-### 1.2 无 Release（D4）
+### 1.2 Release（D4）—— v0.2.0 已建
 
-tag `v0.1.0` 存在但未建 Release，用户拿不到预编译二进制，只能源码构建。
-**版本节奏由 Atlas / 用户定，项目 agent 不自行决定。**
+`v0.2.0` 已创建 GitHub Release，但**未附预编译产物**：CLI 需 `cargo install --path crates/cli`，桌面端需源码运行。
+版本节奏由 Atlas / 用户定，项目 agent 不自行决定。
 
 ### 1.3 仓库元信息（D2）—— 已处置
 
