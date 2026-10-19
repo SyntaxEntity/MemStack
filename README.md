@@ -50,6 +50,18 @@
 | 桌面端 | Linux 需 `webkit2gtk4.1` 等 Tauri 2 依赖 |
 | 同步服务 | Docker / Podman，或本机 Rust 编译 |
 
+### 预编译二进制（Linux x86_64）
+
+从 [Releases](https://github.com/SyntaxEntity/MemStack/releases) 下载，或：
+
+```bash
+tar -xzf memstack-v0.2.0-linux-x86_64.tar.gz
+install -m755 memstack ~/.local/bin/
+memstack --version
+```
+
+需 glibc ≥ 2.39（CLI）/ ≥ 2.34（server）。其他平台或更老的发行版走下面的源码安装。
+
 ### CLI
 
 ```bash
@@ -247,7 +259,7 @@ Rust workspace（edition 2021，rust-version 1.94）；调度 [fsrs](https://cra
 - **本地验证环境**：开发与手工验证仅在 Fedora 44（Wayland）上进行，其他 Linux 发行版未验证。
 - **CI 覆盖范围**：ubuntu / macos / windows 三平台跑 fmt + clippy + test + CLI smoke（见 [ci.yml](.github/workflows/ci.yml)）；**桌面端只在 CI 中编译，未在三平台实际运行验证**。
 - **未产出安装包**：`tauri.conf.json` 中 `bundle.active: false`，桌面端只能源码运行；图标仅 32×32 `icon.png`，正式打包需补完整尺寸套图。
-- **无预编译二进制**：`v0.2.0` 已创建 GitHub Release，但**未附预构建产物**，只能从源码构建（`cargo install --path crates/cli`）。
+- **预编译产物仅 Linux x86_64**：Release 附 CLI / server 二进制与 VSCode `.vsix`；**macOS / Windows 未构建**。CLI 需 glibc ≥ 2.39、server ≥ 2.34。
 - **导出入口只在 CLI**：`memstack export` 提供 JSON 全量（含调度状态与复习记录）与 Markdown（可再导入）；**桌面端尚无导出按钮**。
 - **搜索与标签浏览缺口**：无全文搜索；标签可写入与导入，但暂无按标签筛选或浏览的界面。
 - **暂停 / 归档缺口**：数据库有 `suspended` 字段并在 TUI 中显示，但**没有界面可以切换**；「归档」未实现。

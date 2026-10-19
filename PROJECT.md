@@ -40,7 +40,7 @@
 | CI | `CI`（fmt + 三平台 clippy/test/smoke + **MSRV 1.94 钉住 job**）与 `docker`（GHCR 发布）**最近运行均 success** |
 | 测试 | **82 项全绿**：core 24 / import 25 / storage 8 / server 5 / cli 15 / sync 3 / desktop 2 |
 | 规模 | 约 10.5k 行 Rust（8 个 crate） |
-| GitHub Release | **v0.2.0**（已建，未附预编译产物） |
+| GitHub Release | **v0.2.0**（已建，含 Linux x86_64 CLI / server 二进制 + VSCode `.vsix`） |
 
 **v0.2.0 范围**（见 [CHANGELOG.md](CHANGELOG.md)）：在 v0.1.0 全部能力之上新增 `memstack export`（JSON 全量可复算 FSRS / Markdown 可再导入）。
 
@@ -169,7 +169,7 @@ $ gh repo view SyntaxEntity/MemStack --json licenseInfo
 
 ### 6.3 ~~无 GitHub Release~~（v0.2.0 已建）
 
-`v0.2.0` 已创建 GitHub Release。**未附预编译产物**——CLI 仍需 `cargo install --path crates/cli`，桌面端需源码运行。
+`v0.2.0` 已创建 GitHub Release，并附 **Linux x86_64** 产物：CLI / server tarball、VSCode `.vsix`、`SHA256SUMS`。**macOS / Windows 未构建**；CLI 需 glibc ≥ 2.39、server ≥ 2.34。桌面端仍无安装包（`bundle.active: false`）。
 
 ### 6.4 ~~版本落后于 `master`~~（随 v0.2.0 闭环）
 

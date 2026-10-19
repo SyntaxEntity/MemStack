@@ -36,7 +36,7 @@
 
 ### 1.2 Release（D4）—— v0.2.0 已建
 
-`v0.2.0` 已创建 GitHub Release，但**未附预编译产物**：CLI 需 `cargo install --path crates/cli`，桌面端需源码运行。
+`v0.2.0` 已创建 GitHub Release，附 **Linux x86_64** 产物（CLI / server tarball + VSCode `.vsix` + `SHA256SUMS`）；**macOS / Windows 未构建**，CLI 需 glibc ≥ 2.39。桌面端仍无安装包，只能源码运行。
 版本节奏由 Atlas / 用户定，项目 agent 不自行决定。
 
 ### 1.3 仓库元信息（D2）—— 已处置

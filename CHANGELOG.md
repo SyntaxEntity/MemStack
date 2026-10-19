@@ -9,6 +9,11 @@
 - MSRV 由 `1.85` 修正为 **`1.94`**（实测：`sqlx 0.9` 硬要求 rustc 1.94；1.93 编译失败、1.94 通过）
 - CI 增加 MSRV 钉住 job，防止声明随依赖升级漂移
 
+### 发布产物
+- Release 附 **Linux x86_64**：CLI / server tarball（含 `BUILD-INFO.txt` 记录构建环境与 glibc 下限）、VSCode `.vsix`、`SHA256SUMS`
+- `editors/vscode` 扩展版本对齐主版本（`0.2.0`），清单补 `repository` 字段
+- **macOS / Windows 未构建**；桌面端仍无安装包（`bundle.active: false`）
+
 ### 文档
 - README 按工作区骨架重排，补「已知限制」；修正此前关于搜索 / 暂停归档 / FSRS 参数可调的失实描述
 - 根目录 `LICENSE` 置 MIT 主许可，修复 GitHub 将本项目识别为 AGPL-3.0 的问题
