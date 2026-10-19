@@ -68,8 +68,8 @@ git ls-remote origin && git status -sb
 
 # CLI 端到端 smoke
 cargo run -q --bin memstack -- --help
-cargo run -q --bin memstack -- --db smoke.sqlite add --deck 算法 qa --front f --back b
-cargo run -q --bin memstack -- --db smoke.sqlite export --format json | head -5
+cargo run -q --bin memstack -- --db /tmp/memstack-smoke.sqlite add --deck 算法 qa --front f --back b
+cargo run -q --bin memstack -- --db /tmp/memstack-smoke.sqlite export --format json | head -5
 ```
 
 ---
@@ -78,7 +78,7 @@ cargo run -q --bin memstack -- --db smoke.sqlite export --format json | head -5
 
 1. **`master` 直推**（单人维护期）。分支保护 / PR 模型待 Atlas 定。
 2. **禁止 `git clean` / `git reset --hard` / `git checkout -- .`** —— 工作区可能有多 agent 改动。
-3. **`.gitignore` 已覆盖** `*.sqlite` / `*.db` / `.env` / `target` —— **不要提交任何数据库文件**（`memstack.sqlite` 在仓库根，属本地数据）。
+3. **`.gitignore` 已覆盖** `*.sqlite` / `*.db` / `.env` / `target` —— **不要提交任何数据库文件**。本地库**不要放仓库根**：用 `--db /tmp/...` 或 `~/.memstack/...`（裁定 D-26 / S5）。
 4. **无 `sudo`** —— 需提权的操作打印命令交用户。
 5. **CI 变更走 PR 或先报 Atlas** —— workflow 文件需要 `workflow` scope，当前无。
 
