@@ -6,7 +6,7 @@
 
 开发加载：
 
-1. 把本目录（`editors/vscode`）拷到 `~/.vscode/extensions/memstack-0.1.0`，或
+1. 把本目录（`editors/vscode`）拷到 `~/.vscode/extensions/memstack-0.2.0`，或
 2. `code --extensionDevelopmentPath=/path/to/memstack/editors/vscode`
 
 打包安装：
@@ -14,7 +14,7 @@
 ```bash
 cd editors/vscode
 npx @vscode/vsce package   # 生成 .vsix
-code --install-extension memstack-0.1.0.vsix
+code --install-extension memstack-0.2.0.vsix
 ```
 
 ## 用法

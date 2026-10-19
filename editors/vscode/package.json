@@ -2,7 +2,7 @@
   "name": "memstack",
   "displayName": "忆栈 MemStack",
   "description": "划词造卡：把选中的文字/代码变成忆栈记忆卡",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "publisher": "memstack",
   "license": "MIT OR Apache-2.0",
   "engines": {
